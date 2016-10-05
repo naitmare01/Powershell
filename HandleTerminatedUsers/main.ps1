@@ -2,10 +2,13 @@ $getuser = Get-aduser -filter * -SearchBase "OU=Slutat,OU=User,DC=david,DC=local
 $getDate = (Get-Date).AddDays(-30)
 
 #Utility
-function deleteHomeFolder(){
+function deleteHomeFolder($folderToRemove){
+
         New-Item -Path "C:\temp\Test\" -ItemType Directory
-        robocopy.exe "C:\Temp\Test" "$movedest" /MIR
-        Remove-Item -Path "C:\Temp\Test" -Force -recurse
+        robocopy.exe "C:\Temp\Test" "$folderToRemove" /MIR
+        Remove-Item -Path "C:\Temp\Test" -Force -Recurse
+        Remove-Item -Path $folderToRemove -Force -Recurse
+    
 }
 
 #Utility
@@ -32,22 +35,24 @@ function handleUsers(){
         $userWhenChange = $item.modifyTimeStamp
         $samaccountName = $item.SamAccountName
         $homeFolder = $item.HomeDirectory
+        $homefolder2 = $homeFolder+"_Quit"
+        
          
             if($getDate -gt $userWhenChange){
             #>30days
 
             Remove-ADUser -Identity $samaccountName -Confirm:$false
             #LOGGA
-            deleteHomeFolder
+            deleteHomeFolder($homefolder2)
             #LOGGA
+
             }
             else{
             #<30days
             disableUser($samaccountName)
             #LOGGA
-            renameFolder $homeFolder "Quit_$samAccountname"
+            renameFolder $homeFolder $samAccountname"_Quit"
             #LOGGA
             }    
     }
 }
-
