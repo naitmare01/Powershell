@@ -42,6 +42,7 @@ function renameFolder($folderToRename,$sam){
         }
     catch{
     $logg = "ERROR: $folderToRename hasnt changed name!"
+    saveLog($logg)
     }
 }
 
@@ -51,6 +52,7 @@ function disableUser($userToDisable){
 try{
 Disable-ADAccount -Identity $userToDisable
 $logg = "ADUSer $userToDisable has been disabled."
+saveLog($logg)
     if($userToDisable -match "quit"){
         #Do nothing
         }
@@ -62,6 +64,7 @@ $logg = "ADUSer $userToDisable has been disabled."
     }
 catch{
 $logg = "ERROR: ADUser $userToDisable hasnt been disabled and/or changed samaccoutname."
+saveLog($logg)
 }
 }
 
