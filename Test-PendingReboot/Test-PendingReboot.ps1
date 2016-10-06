@@ -1,3 +1,5 @@
+#Copied from https://gist.github.com/altrive/5329377
+
 #Based on <http://gallery.technet.microsoft.com/scriptcenter/Get-PendingReboot-Query-bdb79542>
 function Test-RebootRequired 
 {
