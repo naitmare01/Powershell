@@ -1,4 +1,4 @@
-$getuser = Get-aduser -filter * -SearchBase "OU=Slutat,OU=User,DC=david,DC=local" -Properties *
+$getuser = Get-aduser -filter{samaccountname -eq "davidtest2-quit"} -Properties * #-SearchBase "OU=Slutat,OU=Users,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se" -Properties *
 $getDate = (Get-Date).AddDays(-30)
 
 $date = Get-Date -format "dd-MMM-yyyy"
@@ -33,15 +33,17 @@ function deleteHomeFolder($folderToRemove){
 
 #Utility
 function renameFolder($folderToRename,$sam){
-    try{
+
+        if(Test-Path $folderToRename){
         $oldName = Get-Item $folderToRename
         $oldName = $oldName.Name
         Rename-Item $folderToRename -NewName "$sam"
         $logg = "Old folder $folderToRename has changed name to $sam"
         saveLog($logg)
         }
-    catch{
-    $logg = "ERROR: $folderToRename hasnt changed name!"
+        
+    else{
+    $logg = "ERROR: $folderToRename hasnt changed name! Cant find folder."
     saveLog($logg)
     }
 }
@@ -79,10 +81,10 @@ saveLog($logg)
         $homefolder2 = $homeFolder+"_Quit"
         
          
-            if($getDate -gt $userWhenChange){
+            if($getDate -lt $userWhenChange){
             #>30days
 
-            Remove-ADUser -Identity $samaccountName -Confirm:$false
+            #Remove-ADUser -Identity $samaccountName -Confirm:$false
             $logg = "ADUser $samaccountname has been removed."
             saveLog($logg)
             deleteHomeFolder($homefolder2)
