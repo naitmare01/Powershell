@@ -82,7 +82,7 @@ saveLog($logg)
         $homefolder2 = $homeFolder+"_Quit"
         
          
-            if($getDate -lt $userWhenChange){
+            if($getDate -gt $userWhenChange){
             #>30days
 
             Remove-ADUser -Identity $samaccountName -Confirm:$false
