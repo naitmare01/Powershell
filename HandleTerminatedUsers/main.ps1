@@ -1,4 +1,4 @@
-$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=,DC=,DC=," -Properties *
+$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=,DC=se" -Properties *
 $getDate = (Get-Date).AddDays(-30)
 
 $date = Get-Date -format "dd-MMM-yyyy"
@@ -17,14 +17,13 @@ function saveLog($textToSave)
 #Utility
 function deleteHomeFolder($folderToRemove){
     try{
-        if(Test-Path $folderToRemove){
             New-Item -Path "C:\temp\EmptyDummyFolder\" -ItemType Directory
             robocopy.exe "C:\Temp\EmptyDummyFolder\" "$folderToRemove" /MIR
             Remove-Item -Path "C:\Temp\EmptyDummyFolder\" -Force -Recurse
             Remove-Item -Path $folderToRemove -Force -Recurse
             $logg = "$folderToRemove has been Removed."
             saveLog($logg)
-            }
+            
         }
     catch{
     $logg = "ERROR: $folderToRemove hasnt been removed!"
@@ -89,7 +88,14 @@ saveLog($logg)
             Remove-ADUser -Identity $samaccountName -Confirm:$false
             $logg = "ADUser $samaccountname has been removed."
             saveLog($logg)
-            deleteHomeFolder($homefolder2)
+
+                if(Test-Path $homefolder2){
+                    deleteHomeFolder($homefolder2)
+                }
+                else{
+                    $logg = "Cant find $homefolder2. Will not try to delete this folder."
+                    saveLog($logg)
+                }
 
             }
             else{
@@ -102,4 +108,4 @@ saveLog($logg)
     saveLog($logg)
 }
 
-handleUsers
+#handleUsers
