@@ -58,7 +58,7 @@ saveLog($logg)
         }
     else{
         Set-ADUser $userToDisable -SamAccountName "$userToDisable-quit"
-        $logg = "ADUser $usetToDisable has changed samaccountname to $userToDisable-quit"
+        $logg = "ADUser $userToDisable has changed samaccountname to $userToDisable-quit"
         saveLog($logg)
         }
     }
