@@ -1,4 +1,4 @@
-$getuser = Get-aduser -filter{samaccountname -eq "davidtest2-quit"} -Properties * #-SearchBase "OU=Slutat,OU=Users,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se" -Properties *
+$getuser = Get-aduser -filter * -SearchBase "OU=tet,DC=asdasd" -Properties *
 $getDate = (Get-Date).AddDays(-30)
 
 $date = Get-Date -format "dd-MMM-yyyy"
@@ -84,7 +84,7 @@ saveLog($logg)
             if($getDate -lt $userWhenChange){
             #>30days
 
-            #Remove-ADUser -Identity $samaccountName -Confirm:$false
+            Remove-ADUser -Identity $samaccountName -Confirm:$false
             $logg = "ADUser $samaccountname has been removed."
             saveLog($logg)
             deleteHomeFolder($homefolder2)
