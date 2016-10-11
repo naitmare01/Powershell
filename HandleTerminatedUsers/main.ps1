@@ -1,8 +1,8 @@
-$getuser = Get-aduser -filter * -SearchBase "OU=tet,DC=asdasd" -Properties *
+$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=,DC=,DC=," -Properties *
 $getDate = (Get-Date).AddDays(-30)
 
 $date = Get-Date -format "dd-MMM-yyyy"
-$logpath = "C:\Scripts\CleanUpTerminatedUsers\Logs\$date"+"Logfile.txt"
+$logpath = "C:\Scripts\CleanUpTerminatedUsers\Logs\$date"+"_Logfile.txt"
 
 
 #Function to log
@@ -17,12 +17,14 @@ function saveLog($textToSave)
 #Utility
 function deleteHomeFolder($folderToRemove){
     try{
-        New-Item -Path "C:\temp\EmptyDummyFolder\" -ItemType Directory
-        robocopy.exe "C:\Temp\EmptyDummyFolder\" "$folderToRemove" /MIR
-        Remove-Item -Path "C:\Temp\EmptyDummyFolder\" -Force -Recurse
-        Remove-Item -Path $folderToRemove -Force -Recurse
-        $logg = "$folderToRemove has been Removed."
-        saveLog($logg)
+        if(Test-Path $folderToRemove){
+            New-Item -Path "C:\temp\EmptyDummyFolder\" -ItemType Directory
+            robocopy.exe "C:\Temp\EmptyDummyFolder\" "$folderToRemove" /MIR
+            Remove-Item -Path "C:\Temp\EmptyDummyFolder\" -Force -Recurse
+            Remove-Item -Path $folderToRemove -Force -Recurse
+            $logg = "$folderToRemove has been Removed."
+            saveLog($logg)
+            }
         }
     catch{
     $logg = "ERROR: $folderToRemove hasnt been removed!"
@@ -99,3 +101,5 @@ saveLog($logg)
     $logg = "Script ended.`n------------------"
     saveLog($logg)
 }
+
+handleUsers
