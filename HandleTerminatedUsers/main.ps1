@@ -1,4 +1,4 @@
-$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=,DC=se" -Properties *
+$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=Slutat,OU=Users,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se"
 $getDate = (Get-Date).AddDays(-30)
 
 $date = Get-Date -format "dd-MMM-yyyy"
@@ -78,17 +78,17 @@ saveLog($logg)
     foreach($item in $getuser){
         $userWhenChange = $item.modifyTimeStamp
         $samaccountName = $item.SamAccountName
+        $UserDn = $item.DistinguishedName
         $homeFolder = $item.HomeDirectory
         $homefolder2 = $homeFolder+"_Quit"
         
          
             if($getDate -gt $userWhenChange){
             #>30days
-
-            Remove-ADUser -Identity $samaccountName -Confirm:$false
+            Get-ADuser $samaccountName | Remove-ADObject -Recursive -Confirm:$false
             $logg = "ADUser $samaccountname has been removed."
             saveLog($logg)
-
+            
                 if(Test-Path $homefolder2){
                     deleteHomeFolder($homefolder2)
                 }
@@ -108,4 +108,4 @@ saveLog($logg)
     saveLog($logg)
 }
 
-#handleUsers
+handleUsers
