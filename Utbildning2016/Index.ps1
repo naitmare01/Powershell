@@ -72,6 +72,15 @@ function testAndSetReg{
 }
 
     ##End Skapa
+    <#Uppgift:
+    1. Skapa en GPO under HKCU\Software med valfritt namn
+    2. Lägg till properties med namnet "Test", typen ska vara "String" och "Value" ska vara "123"
+    3. Läs in nyckeln i konsolen och kontrollera att allt är ser rätt ut. 
+    4. Uppdatera propertien från punkt 2 med calfritt värde. 
+    5. Läs in nyckeln igen. 
+    6. Ta bort nyckeln.  
+    
+    #>
 
 
 ###Filer och mappar
@@ -134,6 +143,16 @@ function testAndSetReg{
     #Ta bort alla filer med en viss filändelse?
     Remove-Item C:\scripts\*.ps1 -WhatIf
 
+    <#
+    Uppgift: 
+    1. Skapa en mapp
+    2. Skapa en fil i mappen
+    3. Skapa en mapp i mappen
+    4. Läs in hela strukturen i konsolen från med start från mappen som skapades i punkt 1. 
+    5. Döp om mappen eller filen. 
+    6. Läs in hela strukturen i konsolen för att verifiera att det ser rätt ut. 
+    7. Ta bort allt du skapat. 
+    #>
 
     ##XML
 
