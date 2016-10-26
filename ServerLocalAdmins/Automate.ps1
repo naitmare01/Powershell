@@ -99,6 +99,10 @@ function checkForGroups
         #Pausar scriptet i 1200s(20minuter) för att replikering ska hinnas göras innan den försöker lägga till grupperna på respektive server. 
         start-sleep -s 1200
         Foreach($a in $computers){
+        $namn = $a.Name
+        $name = "G.Sec.General.LocalAdmin$namn"
+        $checkGroup = Get-ADGroup -Filter {(name -eq $name)} -searchbase $location
+        $NyVar = $checkGroup.samaccountname
 
             Localadmin "$namn" "$NyVar" "$Name"
 
