@@ -9,6 +9,8 @@
 #Miljövariablar
 #get-Help -name Cmdlet
 
+##Prata lite löst om PS i allmänhet.. 
+
 
 ###Registret
 
@@ -73,7 +75,7 @@ function testAndSetReg{
 
     ##End Skapa
     <#Uppgift:
-    1. Skapa en GPO under HKCU\Software med valfritt namn
+    1. Skapa en registernyckel under HKCU\Software med valfritt namn
     2. Lägg till properties med namnet "Test", typen ska vara "String" och "Value" ska vara "123"
     3. Läs in nyckeln i konsolen och kontrollera att allt är ser rätt ut. 
     4. Uppdatera propertien från punkt 2 med calfritt värde. 
@@ -86,24 +88,25 @@ function testAndSetReg{
 ###Filer och mappar
 
     ##Skapa filer
-    New-Item -Path 'C:\temp\dummyfolder\file.txt' -ItemType "File"
-    $testPath = Test-Path "C:\temp\dummyfolder\file.txt"
+    $pathToCreate = "C:\temp\dummyfolder\file.txt"
+    New-Item -Path $pathToCreate -ItemType "File"
+    $testPath = Test-Path $pathToCreate
 
         if($testPath -eq $false){
-        Write-Warning "Path $testPath doesnt exist!"
+        Write-Warning "Path $pathToCreate doesnt exist!"
         }
         Else{
-        Write-Host "Path $testPath exist!"
+        Write-Host "Path $pathToCreate exist!"
         }
     ##Skapa mappar
     New-Item -Path 'C:\temp\dummyfolder' -ItemType "Directory"
     $testPath = Test-Path "C:\Temp\Dummyfolder"
 
     if($testPath -eq $false){
-        Write-Warning "Path $testPath doesnt exist!"
+        Write-Warning "Path C:\temp\dummyfolder doesnt exist!"
         }
         Else{
-        Write-Host "Path $testPath exist!"
+        Write-Host "Path C:\temp\dummyfolder exist!"
         }
     
     ##Ändra filer och kataloger
@@ -113,35 +116,38 @@ function testAndSetReg{
     Get-ChildItem "C:\temp\*.log"| Rename-Item -NewName {$_.name -Replace '\.log','.txt' }
 
     #Ändrar namn på en fil. Man kan kolla på Test-Path om man är osäker på om filen finns eller inte. 
+    #Använd då Test-Path! 
     Rename-Item -Path "C:\Temp\Dummyfolder\file.txt" -NewName "newFileName.txt"
     #WhatIf?
-    Rename-Item -Path "C:\Temp\Dummyfolder\file.txt" -NewName "newFileName.txt" -WhatIf
+    #skapa txt-filen manuellt innan scriptet körs.
+    Rename-Item -Path "C:\Temp\Dummyfolder\file2.txt" -NewName "newFileName.txt" -WhatIf
 
     #Flytta och byta namn samtidigt?
     Move-Item -Path "C:\Temp\Dummyfolder\file.txt" -Destination "C:\temp\OldFile.txt"
 
     #Byta namn på alla kataloger i en mapp.
     Get-ChildItem "C:\temp" | Where-Object{$_.PSIsContainer} | Rename-Item -NewName {$_.name -Replace 'OldName','NewName' }
+    Get-ChildItem "C:\temp" | Where-Object{$_.PSIsContainer -and $_.name -like "*oldname*"} | Rename-Item -NewName {$_.name -Replace 'OldName','NewName' }
 
     ##Ta bort filer och kataloger
     #https://technet.microsoft.com/sv-se/library/ee176938.aspx
     #Syntax
-    Remove-Item "c:\scripts\test.txt"
+    Remove-Item "c:\temp\scripts\test.txt"
 
     #Ta bort alla filer i en mapp rekursivt
-    Remove-Item "c:\scripts\*"
+    Remove-Item "c:\temp\scripts\*"
 
     #Ta bort att filer utan en viss typ?
-    Remove-Item c:\scripts\* -exclude *.ps1
+    Remove-Item c:\temp\scripts\* -exclude *.ps1
 
     #Ta bort endast en viss typ av filer?
-    Remove-Item c:\scripts\* -include .jpg,.mp3
+    Remove-Item c:\temp\scripts\* -include *.jpg,*.mp3
 
     #Inkludera och exkludera samtidigt?
-    Remove-Item c:\scripts\* -include *.txt -exclude *test*
+    Remove-Item c:\temp\scripts\* -include *.txt -exclude *test*
 
     #Ta bort alla filer med en viss filändelse?
-    Remove-Item C:\scripts\*.ps1 -WhatIf
+    Remove-Item C:\temp\scripts\*.ps1 -WhatIf
 
     <#
     Uppgift: 
@@ -291,6 +297,7 @@ Get-Content C:\temp\PowershellUtbildning2016\ErrorHandling.ps1
     }
 
     #Mer om olika loopar och exempel: http://www.computerperformance.co.uk/powershell/powershell_loops.htm
+
     #uppgift, skriv en loop som Går igenom siffrorna 1-20, tar alla jämna tal och multiplicerar dom med 2 och skriver ut till konsolen. Så lite kod som möjligt! 
     <#Resultatet ska se ut som nedan:
     4
@@ -307,7 +314,6 @@ Get-Content C:\temp\PowershellUtbildning2016\ErrorHandling.ps1
     {
     1..20 | % {if($_ % 2 -eq 0 ) {$_*2 } }
     }
-
 
     ###Miljövariablar
     #https://technet.microsoft.com/en-us/library/ff730964.aspx
