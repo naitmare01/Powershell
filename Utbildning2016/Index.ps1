@@ -86,6 +86,16 @@ function testAndSetReg{
 
 
 ###Filer och mappar
+    ##Skapa mappar
+    New-Item -Path 'C:\temp\dummyfolder' -ItemType "Directory"
+    $testPath = Test-Path "C:\Temp\Dummyfolder"
+
+    if($testPath -eq $false){
+        Write-Warning "Path C:\temp\dummyfolder doesnt exist!"
+        }
+        Else{
+        Write-Host "Path C:\temp\dummyfolder exist!"
+        }
 
     ##Skapa filer
     $pathToCreate = "C:\temp\dummyfolder\file.txt"
@@ -98,16 +108,7 @@ function testAndSetReg{
         Else{
         Write-Host "Path $pathToCreate exist!"
         }
-    ##Skapa mappar
-    New-Item -Path 'C:\temp\dummyfolder' -ItemType "Directory"
-    $testPath = Test-Path "C:\Temp\Dummyfolder"
 
-    if($testPath -eq $false){
-        Write-Warning "Path C:\temp\dummyfolder doesnt exist!"
-        }
-        Else{
-        Write-Host "Path C:\temp\dummyfolder exist!"
-        }
     
     ##Ändra filer och kataloger
     #https://technet.microsoft.com/en-us/library/hh849763.aspx
@@ -119,11 +120,10 @@ function testAndSetReg{
     #Använd då Test-Path! 
     Rename-Item -Path "C:\Temp\Dummyfolder\file.txt" -NewName "newFileName.txt"
     #WhatIf?
-    #skapa txt-filen manuellt innan scriptet körs.
-    Rename-Item -Path "C:\Temp\Dummyfolder\file2.txt" -NewName "newFileName.txt" -WhatIf
+    Rename-Item -Path "C:\Temp\Dummyfolder\file.txt" -NewName "newFileName.txt" -WhatIf
 
     #Flytta och byta namn samtidigt?
-    Move-Item -Path "C:\Temp\Dummyfolder\file.txt" -Destination "C:\temp\OldFile.txt"
+    Move-Item -Path "C:\Temp\Dummyfolder\newFileName.txt" -Destination "C:\temp\OldFile.txt"
 
     #Byta namn på alla kataloger i en mapp.
     Get-ChildItem "C:\temp" | Where-Object{$_.PSIsContainer} | Rename-Item -NewName {$_.name -Replace 'OldName','NewName' }
@@ -133,9 +133,6 @@ function testAndSetReg{
     #https://technet.microsoft.com/sv-se/library/ee176938.aspx
     #Syntax
     Remove-Item "c:\temp\scripts\test.txt"
-
-    #Ta bort alla filer i en mapp rekursivt
-    Remove-Item "c:\temp\scripts\*"
 
     #Ta bort att filer utan en viss typ?
     Remove-Item c:\temp\scripts\* -exclude *.ps1
@@ -148,6 +145,9 @@ function testAndSetReg{
 
     #Ta bort alla filer med en viss filändelse?
     Remove-Item C:\temp\scripts\*.ps1 -WhatIf
+
+    #Ta bort alla filer i en mapp rekursivt
+    Remove-Item "c:\temp\scripts\*"
 
     <#
     Uppgift: 
@@ -205,7 +205,7 @@ function testAndSetReg{
     [xml]$cars = Get-Content -Path C:\temp\Cars2.xml
 
     #Ändra i en XML
-    #Gå till denna sida och gör alla steg själva: https://blogs.msdn.microsoft.com/sonam_rastogi_blogs/2014/05/14/update-xml-file-using-powershell/
+    #Gå till denna sida och gör alla steg själva om tid finns: https://blogs.msdn.microsoft.com/sonam_rastogi_blogs/2014/05/14/update-xml-file-using-powershell/
 
 
     ###INI
@@ -256,7 +256,8 @@ $ini2 = Get-IniContent -FilePath "C:\temp\Ccleaner.ini"
 $ini2.Options.Language
 
 ###Loggning och EA
-Get-Content C:\temp\PowershellUtbildning2016\ErrorHandling.ps1
+$tab = $psISE.PowerShellTabs.Add()
+$tab.Files.Add("C:\temp\PowershellUtbildning2016\ErrorHandling.ps1")
 
 
     ###Loopar
@@ -322,6 +323,7 @@ Get-Content C:\temp\PowershellUtbildning2016\ErrorHandling.ps1
     #Skapa en variabel
     $env:TestVariable = "This is a test environment variable."
     Get-ChildItem Env:TestVariable
+    Set-Item Env:TestVariable -Value "New Value"
 
     #Ta bort variabel
     Remove-Item Env:\TestVariable
