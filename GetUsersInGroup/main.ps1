@@ -13,7 +13,16 @@ function Get-UsersInGroup {
     
     $indent = "-" * $Level
     $object = (Get-ADGroup "$object").DistinguishedName
-
+   
+    $newArray.Add($object)
+    $arrayCheck = $newArray | group
+    $arrayCheckSelect = $arrayCheck | ?{$_.Group -like "*$object*"}
+    
+    if($arrayCheckSelect.count -gt 3){
+        Write-Warning "$object has caused an infinite loop, script will exit."
+        break
+    }
+    
     $x = Get-ADObject -Identity $Object -Properties SamAccountName
  
     if ($x.ObjectClass -eq "group") {
@@ -36,3 +45,4 @@ function Get-UsersInGroup {
         Write-Warning "$($Object) is not a group, it is a $($x.ObjectClass)"
     }
 }
+$newArray = New-Object System.Collections.Generic.List[System.Object]
