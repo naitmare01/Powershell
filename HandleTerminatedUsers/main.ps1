@@ -1,4 +1,4 @@
-$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=Slutat,OU=Users,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se"
+$getuser = Get-aduser -filter * -Properties * -SearchBase "OU=OU,DC=Domain"
 $getDate = (Get-Date).AddDays(-30)
 
 $date = Get-Date -format "dd-MMM-yyyy"
