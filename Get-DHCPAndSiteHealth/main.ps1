@@ -1,5 +1,4 @@
 <#
-<#
 .Synopsis
    List which DNS and Subnet a specific IP is associated with.
 .DESCRIPTION
