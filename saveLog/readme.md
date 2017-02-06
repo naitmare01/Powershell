@@ -1,8 +1,8 @@
-Function to log a string and timestamp it. 
-Supports output of .txt or .csv. 
-Supports local folders and UNC. 
+Function to log a string and timestamp it. </br>
+Supports output of .txt or .csv. </br>
+Supports local folders and UNC. </br>
 
-How to use:
+How to use:</br>
 
 1.
 $loggToSave = "Example Text"</br>
