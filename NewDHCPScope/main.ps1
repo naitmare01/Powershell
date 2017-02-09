@@ -5,7 +5,7 @@ function NewDHCPScope{
     [parameter(mandatory=$true)]
     [string]$Subnet,
     [string]$SubnetMask = "255.255.255.0",
-    [string]$DHCPServer = "IPAdress to DhcpServer"
+    [string]$DHCPServer = "172.30.4.244"
     )
 
     #Check if dhcp module is loaded
@@ -28,15 +28,19 @@ function NewDHCPScope{
         #Rätt format
         $CorrectedSubnet = $subnet.Substring(0, $subnet.LastIndexOf("."))
         $CorrectedSubnet = "$CorrectedSubnet.0"
+        
+        $repairSubnet = $Subnet
+        $repairSubnet = $subnet.Split(".")
+
         $subnet = $CorrectedSubnet
         $splitatSubnet = $subnet.Split(".")
         
         #Laga subneten ifall man inte matar in 4st okteter. 
-        if($splitatSubnet.Count.Equals(3)){
-            [System.Collections.ArrayList]$SubnetArrayList = $splitatSubnet
+        if($repairSubnet.Count.Equals(3)){
+            [System.Collections.ArrayList]$SubnetArrayList = $repairSubnet
             $SubnetArrayList.add("0")
             $fixedSubentArray = $SubnetArrayList[0] + "." + $SubnetArrayList[1] + "." + $SubnetArrayList[2] + "." + $SubnetArrayList[3]
-            $splitatSubnet = $fixedSubentArray.Split(".")
+            $splitatSubnet = $SubnetArrayList.Split(".")
             $Subnet = $fixedSubentArray
         }
 
