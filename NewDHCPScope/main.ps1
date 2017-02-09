@@ -5,7 +5,7 @@ function NewDHCPScope{
     [parameter(mandatory=$true)]
     [string]$Subnet,
     [string]$SubnetMask = "255.255.255.0",
-    [string]$DHCPServer = "172.30.4.244"
+    [string]$DHCPServer = "IP ADRESS OF DHCP_SERVER"
     )
 
     #Check if dhcp module is loaded
@@ -77,7 +77,8 @@ function NewDHCPScope{
         Answer"
 
             if($confirmation -eq "y"){
-                Add-DhcpServerv4Scope -Name $Name -StartRange $startrange -EndRange $endrange -SubnetMask $SubnetMask
+                Add-DhcpServerv4Scope -Name $Name -StartRange $startrange -EndRange $endrange -SubnetMask $SubnetMask -PassThru | Set-DhcpServerv4OptionValue -OptionId 3 -Value $gateway
+                Set-DhcpServerv4Scope -ScopeId $Subnet -LeaseDuration(New-TimeSpan -Hours 1)# | Set-DhcpServerv4OptionValue -optionId 51 -Value 8000
                 Write-Host "Scopet för enheten $name skapat!" -ForegroundColor black -BackgroundColor Yellow
                 return
             }
