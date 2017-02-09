@@ -78,7 +78,7 @@ function NewDHCPScope{
 
             if($confirmation -eq "y"){
                 Add-DhcpServerv4Scope -Name $Name -StartRange $startrange -EndRange $endrange -SubnetMask $SubnetMask -PassThru | Set-DhcpServerv4OptionValue -OptionId 3 -Value $gateway
-                Set-DhcpServerv4Scope -ScopeId $Subnet -LeaseDuration(New-TimeSpan -Hours 1)# | Set-DhcpServerv4OptionValue -optionId 51 -Value 8000
+                Set-DhcpServerv4Scope -ScopeId $Subnet -LeaseDuration(New-TimeSpan -Hours 8)# | Set-DhcpServerv4OptionValue -optionId 51 -Value 8000
                 Write-Host "Scopet för enheten $name skapat!" -ForegroundColor black -BackgroundColor Yellow
                 return
             }
