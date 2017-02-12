@@ -16,7 +16,7 @@ function renameProfileData($user){
     $arr = "1001", "2001", "3001"
 
     foreach($a in $arr){
-        $root = Get-childitem \\knet.ad.svenskakyrkan.se\dfs01\profiles$a | ?{$_.PSIsContainer}
+        $root = Get-childitem "ROOTMapp$a" | ?{$_.PSIsContainer}
         
             foreach($r in $root){
 
