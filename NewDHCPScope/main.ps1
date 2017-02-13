@@ -1,11 +1,12 @@
-function NewDHCPScope{
+function New-DHCPScope{
     param(
     [parameter(mandatory=$true)]
     [string]$Name,
     [parameter(mandatory=$true)]
     [string]$Subnet,
     [string]$SubnetMask = "255.255.255.0",
-    [string]$DHCPServer = "IP ADRESS OF DHCP_SERVER"
+    [string]$DHCPServer = "IP Adress of server",
+    [string]$NewSiteSubnet = "Y"
     )
 
     #Check if dhcp module is loaded
@@ -80,6 +81,14 @@ function NewDHCPScope{
                 Add-DhcpServerv4Scope -Name $Name -StartRange $startrange -EndRange $endrange -SubnetMask $SubnetMask -PassThru | Set-DhcpServerv4OptionValue -OptionId 3 -Value $gateway
                 Set-DhcpServerv4Scope -ScopeId $Subnet -LeaseDuration(New-TimeSpan -Hours 8)# | Set-DhcpServerv4OptionValue -optionId 51 -Value 8000
                 Write-Host "Scopet för enheten $name skapat!" -ForegroundColor black -BackgroundColor Yellow
+
+                if($NewSiteSubnet -ne "Y"){
+                    Write-Warning "Scriptet avslutas. Scope skapad men inget subnet upplagd i S&S skapat."
+                    return
+                }
+                else{
+                    Get-AdSiteSubnet
+                }
                 return
             }
             else{
@@ -94,4 +103,44 @@ function NewDHCPScope{
         return
     }
 
+}
+
+function Get-AdSiteSubnet{
+    param(
+    )
+
+        #Check if AD module is loaded
+    If(Get-Module -ListAvailable -Name activedirectory){
+        #Module is loaded
+    }
+    else{
+        Import-Module activedirectory
+    }
+
+    #Globals
+    $AllCurrentSites = Get-ADReplicationSite -Filter *
+    $AllCurrentSitesName = $AllCurrentSites.Name
+    Write-Host "Listar alla tillgängliga siter i S&S"
+        for ($i = 0; $i -lt $AllCurrentSites.Count; $i++){ 
+            $number = $i+1
+            $sitenameChoice = $AllCurrentSites.name[$i]
+            $siteNameChoice = "$sitenameChoice[$number]"
+            Write-Host $siteNameChoice
+        }
+
+        [int]$ValAvSite = Read-Host -Prompt "Vilket site vill du skapa subnetet i?"
+
+        $siffra = $AllCurrentSites.name[$ValAvSite-1]
+
+            if($ValAvSite -in 1..$AllCurrentSites.count){
+                    New-ADReplicationSubnet -Name "$Subnet/24" -Site $siffra -Description $name
+                    Write-Host "Enheten $name med subnet $Subnet/24 tillagt i siten $siffra!" -ForegroundColor black -BackgroundColor Yellow
+                    return
+            }
+            else{
+            Write-Warning "Du angav inte en giltig siffra. Välj en siffra som finns på listan."
+            Get-AdSiteSubnet
+
+            }
+            
 }
