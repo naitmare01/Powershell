@@ -1,11 +1,29 @@
+<#
+.Synopsis
+   David Berndtsson 2017-02-13, Data Ductus, Uppsala.
+   Function för att lägga till dchp-scope och lägga till subnetet i S&S.
+.DESCRIPTION
+   Detta script hanterar även felskrivningar i inmatningen. Tex: "-Subnet 192.168.10.10" kommer att konverteras till "-Subnet 192.168.10.0"
+.EXAMPLE
+   -Input: New-DHCPScope -Name "Enhet X" -Subnet 192.168.10.0 -DHCPServer Localhost
+   -OutPut: Kommer att lägga till "Enhet X" som ett scope med ip 192.168.10.0 på dhcp-servern localhost. Samt lägga till nätet i S&S
+.EXAMPLE
+   $array = Import-csv "C:\ListOfSubnet.csv"
+   $array | Foreach-object{New-DHCPScope -Name $_.Name -Subnet $_.Subnet}
+#>
 function New-DHCPScope{
     param(
+    #Namnet på enheten som ska läggas till.
     [parameter(mandatory=$true)]
     [string]$Name,
+    #IP-adressen på subnetet.
     [parameter(mandatory=$true)]
     [string]$Subnet,
+    #Masken, kan ändras. 
     [string]$SubnetMask = "255.255.255.0",
-    [string]$DHCPServer = "IP Adress of server",
+    #DHCP-Servern. Kan ändras.
+    [string]$DHCPServer = "IP Address of server",
+    #Y/N om subnetet ska läggas till i S&S. Kan ändras.
     [string]$NewSiteSubnet = "Y"
     )
 
