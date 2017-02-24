@@ -223,11 +223,13 @@ saveLog($logg)
         $samaccountName = $item.SamAccountName
         $UserDn = $item.DistinguishedName
         $homeFolder = $item.HomeDirectory
+        $enabled = $item.Enabled
         $homefolder2 = $homeFolder+"_Quit"
         
          
-            if($getDate -gt $userWhenChange){
+            if($getDate -ge $userWhenChange -and $getDate60 -lt $userWhenChange){
             #>30days
+            #30-59 dagar
             
             <#
             Byt namn till SID
@@ -239,8 +241,9 @@ saveLog($logg)
 
 
             }
-            elseif($getDate60 -gt $userWhenChange -and $getDate60 -lt $userWhenChange){
+            elseif($getDate60 -ge $userWhenChange){
             #>60days
+            #60- dagar
             
             <#
             Radera Kontot
@@ -261,8 +264,9 @@ saveLog($logg)
                 
                 deleteProfileData($samaccountName)
             }
-            else{
+            elseif($getDate -lt $userWhenChange -and $enabled -eq $true){
             #<30days
+            #0-29 dagar
 
             <#
             Disable kontot
