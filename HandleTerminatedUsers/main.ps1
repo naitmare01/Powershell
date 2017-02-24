@@ -1,3 +1,13 @@
+<#
+.Synopsis
+   Samling funktioner för att hantera avslut av användarkonton. 
+.DESCRIPTION
+   Om whenChanged på AD-usern är mindre än 30 dagar 
+.EXAMPLE
+   handleUsers -searchbase "DistinguishedName" -logFileLocation "C:\Temp\File.txt
+   Disablar alla konton under -Searchbase och sparar logg på jobbet i C:\Temp\File.txt
+#>
+
 $getDate = (Get-Date).AddDays(-30)
 $getDate60 = (Get-Date).AddDays(-60)
 $date = Get-Date -format "dd-MMM-yyyy"
@@ -11,12 +21,12 @@ function saveLog($textToSave)
     $textToSave | Out-File $logpath -Encoding utf8 -Append
 }
 
-#Utility
+#Funktion för att byta namn på citrix profildata
 function renameProfileData($user){
     $arr = "1001", "2001", "3001"
 
     foreach($a in $arr){
-        $root = Get-childitem "ROOTMapp$a" | ?{$_.PSIsContainer}
+        $root = Get-childitem \\knet.ad.svenskakyrkan.se\dfs01\profiles$a | ?{$_.PSIsContainer}
         
             foreach($r in $root){
 
@@ -38,7 +48,7 @@ function renameProfileData($user){
     }
 }
 
-#Utility
+#Funktion för att ta bort citrix profildata
 function deleteProfileData($user){
     $arr = "1001", "2001", "3001"
 
@@ -74,7 +84,7 @@ function deleteProfileData($user){
     }
 }
 
-#Utility
+#Funktion för att delete %homeshare%
 function deleteHomeFolder($folderToRemove){
     try{
             New-Item -Path "C:\temp\EmptyDummyFolderCtx\" -ItemType Directory
@@ -92,7 +102,7 @@ function deleteHomeFolder($folderToRemove){
     
 }
 
-#Utility
+#Funktion för att byta namn på katalog
 function renameFolder($folderToRename,$sam){
 
         if(Test-Path $folderToRename){
@@ -109,7 +119,7 @@ function renameFolder($folderToRename,$sam){
     }
 }
 
-#Utility
+#Funktion för att disabla usern.
 function disableUser($userToDisable){
 
 try{
@@ -148,7 +158,7 @@ Function setDescription{
             saveLog($logg)
         }
         else{
-            Set-ADUser $samaccountname -Description "Stängt $descrip"
+            Set-ADUser $samaccountname -Description "$descrip"
             $logg = "Description set on user $sam."
             saveLog($logg)
         }
@@ -208,7 +218,7 @@ function setSIDAsName{
 
 }
 
-#Main Function
+#Main Function thats calls other funciton.
 function handleUsers(){
 param(
 [string]$searchbase,
@@ -265,16 +275,21 @@ saveLog($logg)
                 deleteProfileData($samaccountName)
             }
             elseif($getDate -lt $userWhenChange -and $enabled -eq $true){
-            #<30days
+            #<30days + enabled = true
             #0-29 dagar
-
+            #Disable kontot
+            
+            disableUser($samaccountName)
+            }
+            elseif($getDate -lt $userWhenChange -and $enabled -eq $true){
             <#
-            Disable kontot
+            30days + enabled = true
+            #0-29 dagar
             Bytt namn på hemkatalogen
             Byt namn på profilkatalogen
             Sätt description
             #>
-                disableUser($samaccountName)
+                
                 renameFolder $homeFolder $samAccountname"_Quit"
                 renameProfileData($samaccountName)
                 setDescription -samaccountname $samaccountName
@@ -285,5 +300,5 @@ saveLog($logg)
     saveLog($logg)
 }
 
-handleUsers -searchbase "Distinguishedname" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _Logfile.txt"
-handleUsers -searchbase "Distinguishedname" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _TRASHOULogfile.txt"
+handleUsers -searchbase "OU=Slutat,OU=Users,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _Logfile.txt"
+handleUsers -searchbase "OU=Trash,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _TRASHOULogfile.txt"
