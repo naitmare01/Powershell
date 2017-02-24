@@ -1,8 +1,21 @@
 <#
 .Synopsis
-   Samling funktioner för att hantera avslut av användarkonton. 
+   Samling funktioner för att hantera avslut av användarkonton i AD.
+
 .DESCRIPTION
-   Om whenChanged på AD-usern är mindre än 30 dagar 
+   1. Om whenChanged på AD-usern är mindre än 30 dagar och enabled = $true kommer kontot att disablas.
+   2. Om whenChanged på AD-usern är mindre än 30 dagar och enabled = $false kommer vi:
+            Att byta namn på hemkatalogen till "*_Quit"
+            Att byta namn på Citrix profil datan till "*_Quit"
+            Att sätta description till "Stängt $date"
+   3. Om whenChanged på AD-usern är mer än 30 dagar och mindre än 60 dagar kommer vi:
+            Att rensa medlemskap i alla grupper från användaren. 
+            Att byta displayname till "Stängt konto $SID"
+   4. Om whenChanged på AD-usern är mer än 60 dagar kommer vi:
+            Att radera kontot
+            Att radera hemtkatalogen
+            Att radera Citrix profil datan. 
+
 .EXAMPLE
    handleUsers -searchbase "DistinguishedName" -logFileLocation "C:\Temp\File.txt
    Disablar alla konton under -Searchbase och sparar logg på jobbet i C:\Temp\File.txt
@@ -26,7 +39,7 @@ function renameProfileData($user){
     $arr = "1001", "2001", "3001"
 
     foreach($a in $arr){
-        $root = Get-childitem \\knet.ad.svenskakyrkan.se\dfs01\profiles$a | ?{$_.PSIsContainer}
+        $root = Get-childitem DFSSökväg | ?{$_.PSIsContainer}
         
             foreach($r in $root){
 
@@ -53,7 +66,7 @@ function deleteProfileData($user){
     $arr = "1001", "2001", "3001"
 
     foreach($a in $arr){
-        $root = Get-childitem \\knet.ad.svenskakyrkan.se\dfs01\profiles$a | ?{$_.PSIsContainer}
+        $root = Get-childitem DFS-Sökväg | ?{$_.PSIsContainer}
         
             foreach($r in $root){
 
@@ -279,11 +292,12 @@ saveLog($logg)
             #0-29 dagar
             #Disable kontot
             
-            disableUser($samaccountName)
+                disableUser($samaccountName)
+            
             }
             elseif($getDate -lt $userWhenChange -and $enabled -eq $false){
             <#
-            30days + enabled = true
+            30days + enabled = false
             #0-29 dagar
             Bytt namn på hemkatalogen
             Byt namn på profilkatalogen
@@ -300,5 +314,5 @@ saveLog($logg)
     saveLog($logg)
 }
 
-handleUsers -searchbase "OU=Slutat,OU=Users,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _Logfile.txt"
-handleUsers -searchbase "OU=Trash,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _TRASHOULogfile.txt"
+handleUsers -searchbase "DISTINGUISHEDNAME" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _Logfile.txt"
+handleUsers -searchbase "DISTINGUISHEDNAME" -logFileLocation "C:\Scripts\CleanUpTerminatedUsers\Logs\$date _TRASHOULogfile.txt"
