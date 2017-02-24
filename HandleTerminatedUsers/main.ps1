@@ -281,7 +281,7 @@ saveLog($logg)
             
             disableUser($samaccountName)
             }
-            elseif($getDate -lt $userWhenChange -and $enabled -eq $true){
+            elseif($getDate -lt $userWhenChange -and $enabled -eq $false){
             <#
             30days + enabled = true
             #0-29 dagar
