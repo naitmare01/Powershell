@@ -11,10 +11,10 @@
    Get-VeeamBillingInfo -SqlInstance "InstanceName" -SqlDb "DatabaseServer" -WorkingPath "PathToFolderToSaveLog"
 .EXAMPLE
     This will run the script, save the log and print to console. 
-   Get-VeeamBillingInfo -SqlInstance "InstanceName" -SqlDb "DatabaseServer" -WorkingPath "PathToFolderToSaveLog" -PrintToConsole "Y"
+   Get-VeeamBillingInfo -SqlInstance "InstanceName" -SqlDb "DatabaseServer" -WorkingPath "PathToFolderToSaveLog" -PrintToConsole
 
     This will run the script and save the log but will not print to console. 
-   Get-VeeamBillingInfo -SqlInstance "InstanceName" -SqlDb "DatabaseServer" -WorkingPath "PathToFolderToSaveLog" -PrintToConsole "n"
+   Get-VeeamBillingInfo -SqlInstance "InstanceName" -SqlDb "DatabaseServer" -WorkingPath "PathToFolderToSaveLog"
 #>
 
 function Get-VeeamBillingInfo{
@@ -26,7 +26,7 @@ function Get-VeeamBillingInfo{
     [parameter(Mandatory=$true)]
     [string]$WorkingPath,
     [parameter(Mandatory=$false)]
-    [string]$PrintToConsole
+    [switch]$PrintToConsole
     )
 
     #Check if the correct snapin is loaded
@@ -69,7 +69,7 @@ function Get-VeeamBillingInfo{
             $sql = "INSERT INTO usage (jobName,backupSize,totalSize,vmList) VALUES ('$($job.Name)','$($jobBackupSize)','$($jobDataSize)','$($joinedVMs)')"
             Invoke-Sqlcmd -Query $sql -ServerInstance $SqlInstance -Database $SqlDb
 
-                if($PrintToConsole -eq "Y"){
+                if($PrintToConsole){
                         Write "--------------------------------------------"
                         Write "Job: " $job.Name
                         Write "Total Backup Size: " $jobBackupSize;
