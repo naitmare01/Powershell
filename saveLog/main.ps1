@@ -22,13 +22,10 @@ function Save-Log{
         }
     })]
     [Alias("Path")]
-    [string]$LogFilePath = (Get-Item -Path ".\" -Verbose).FullName + "Save-Log.csv"
+    [string]$LogFilePath = (Get-Item -Path ".\" -Verbose).FullName + "\Save-Log.csv"
     )
     $now = Get-Date -format "dd-MMM-yyyy HH:mm"
     $textToSave = "`n" + $textToSave + " - $now"
 
     $textToSave | Out-File $LogFilePath -Encoding utf8 -Append
 }
-
-
-
