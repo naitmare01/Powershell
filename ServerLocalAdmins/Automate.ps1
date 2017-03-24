@@ -37,9 +37,9 @@
 #>
 
 #Statiska variablar
-$searchbase = "INPUT LOCATION IN DN FORMAT"
+$searchbase = "OU=Servers,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se"
 $computers = Get-ADComputer -Filter {OperatingSystem -Like '*Server*'} -searchbase $searchbase
-$location = "INPUT LOCATION IN DN FORMAT"
+$location = "OU=Server,OU=General,OU=Groups,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se"
 
 $date = Get-Date -format "dd-MMM-yyyy"
 $now = Get-Date -format "dd-MMM-yyyy HH:mm"
@@ -68,45 +68,39 @@ function createGroupIfMissing($name2)
 
 #Nedanstående funktion kollar om det finns grupper kopplade till respektive servrar eller inte. 
 #Denna funktion kan man sätta som en scheduled task 1gång/vecka eller liknande. 
-function checkForGroups
-{
+function checkForGroups{
+param(
+[string]$GroupName
+)
 
-    foreach($a in $computers)
+    <#foreach($a in $computers)
         {
             $namn = $a.Name
             $name = "G.Sec.General.LocalAdmin$namn"
             $checkGroup = Get-ADGroup -Filter {(name -eq $name)} -searchbase $location
-            $NyVar = $checkGroup.samaccountname
+            $NyVar = $checkGroup.samaccountname#>
 
         #Ser till att rätt grupper finns. 
-        if($checkGroup -eq $null)
+        if($GroupName -eq $null)
             {
-                $log = "Group $name doesn't Exist"
+                $log = "Group $GroupName doesn't Exist"
                 savelog($log)
                 #OM gruppen inte finns så skapas en grupp med hjälp av funktionen nedan.
-                createGroupIfMissing($name)
-                $log = "Group $name created"
+                createGroupIfMissing($GroupName)
+                $log = "Group $GroupName created"
                 savelog($log)
             }
         else
             {
-                $log = "Group $name already exist"
+                $log = "Group $GroupName already exist"
                 savelog($log)
                 #Om gruppen redan finns behövs inget göras och loppen kan gå vidare.
             }
+        #}
 
-        }
-        #Pausar scriptet i 1200s(20minuter) för att replikering ska hinnas göras innan den försöker lägga till grupperna på respektive server. 
-        start-sleep -s 1200
-        Foreach($a in $computers){
-        $namn = $a.Name
-        $name = "G.Sec.General.LocalAdmin$namn"
-        $checkGroup = Get-ADGroup -Filter {(name -eq $name)} -searchbase $location
-        $NyVar = $checkGroup.samaccountname
+        
 
-            Localadmin "$namn" "$NyVar" "$Name"
-
-        }
+        
 }
 
 #Denna funktion kollar om det finns grupper men inte en server. 
@@ -142,40 +136,69 @@ function deleteGroupIfMissingServer
 }
 
 
+
+
 #Denna funktion lägga till gruppen $DomainGroup på server $Computer som local admin. 
 #Den kommer endast att lägga till gruppen som local admin om den inte redan är det. 
-function Localadmin($Computer, $DomainGroup, $FullGroupName)
-{
+function set-LocalAdmin{
+param(
+[string]$Computer,
+[string]$GroupName
+)
     try{
+
+    $newArray = New-Object System.Collections.Generic.List[System.Object]
+
     $group = [ADSI]("WinNT://"+$Computer+"/Administrators,Group")
-    $group.psbase.invoke("members") | foreach {
+    $group.psbase.invoke("members")| foreach {
 
-            $username = $_.gettype().invokemember("Name", "GetProperty", $null, $_, $null)
-        }
-
-        if ($username -eq $FullGroupName) 
-        {
-            $log = "$Fullgroupname is already admin on server $computer"
-            savelog($log)
-        }
-        else
-        {
-            $log =  "$Fullgroupname is NOT admin on server $computer"
-            savelog($log)
-            $group.add("WinNT://$env:USERDOMAIN/$DomainGroup,Group")
-            $log = "Group $FullGroupName has been added as localadmin on server $Computer"
-            savelog($log)
-        }
+                $username = $_.gettype().invokemember("Name", "GetProperty", $null, $_, $null)
+                $newArray.Add($username)
+            }
+            if ($newArray -eq "$GroupName") 
+            {
+                $savelog = "$GroupName is already admin on server $computer"
+                savelog($savelog)
+            }
+            else
+            {
+                $savelog = "$GroupName is NOT admin on server $computer"
+                savelog($log)
+                $group.add("WinNT://$env:USERDOMAIN/$GroupName,Group")
+                $savelog = "Group $GroupName has been added as localadmin on server $Computer"
+                savelog($savelog)
+            }
+    }
+    catch [System.Management.Automation.MethodInvocationException]{
+        $savelog = "Can't connect remote with [ADSI] on $Computer"
+        saveLog($savelog)
     }
     catch{
-    $log = "Can't connect with WinRM to server $computer."
-    saveLog($log)
+        $savelog = "Can't connect with WinRM to server $computer."
+        saveLog($savelog)
     }
 }
 
 
 
-checkForGroups
+
+function main{
+
+    #Denna loop går igenom alla datorerna och försöker lägga till gruppen som localadmin om den inte redan finns på plats. 
+    foreach($a in $computers){ 
+        $namn = $a.Name
+        $Gname = "G.Sec.General.LocalAdmin$namn"
+        
+        #callar på funktionen för att kolla om grupperna finns. Om inte så kommer den att skapa dessa.
+        checkForGroups -GroupName $Gname
+        #Pausar scriptet i 1200s(20minuter) för att replikering ska hinnas göras innan den försöker lägga till grupperna på respektive server. 
+        #start-sleep -s 1200
+        set-LocalAdmin -Computer $namn -GroupName $Gname
+    }
+
+}
+
+main
 
 $theEnd = "The script finnished.`n---------------------------------"
 saveLog($theEnd)
