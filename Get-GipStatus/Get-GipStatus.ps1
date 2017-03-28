@@ -1,3 +1,6 @@
+<#
+$User must be in an object form and inclube "-Properties memberof"
+#>
 function Get-GipStatus{
 param(
 [parameter(Mandatory=$true,ValueFromPipeline=$True)]
