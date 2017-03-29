@@ -1,4 +1,4 @@
-#Denna funktion tar ut stift och enhet.
+
 function Get-StiftAndEnhet{
 param(
 [parameter(Mandatory=$true,ValueFromPipeline=$True)]
@@ -77,6 +77,7 @@ param(
     $stringToClean = $stringToClean -replace "[æÆ]", "ae"
     $stringToClean = $stringToClean -replace " ", ""
     $stringToClean = $stringToClean -replace "-", ""
+    $stringToClean = $stringToClean -replace ":", ""
 
     return $StringToClean
 
@@ -116,11 +117,13 @@ param(
     #test if firstname exist.
     if($firstname -eq $null){
         Write-Warning "$CurrentSam is missing firstname"
-        return
+        $OutPutObject| Add-Member -Type NoteProperty -Name "NewSAM"-Value "MISSING_FIRSTNAME"
+        return $OutPutObject
     }
     elseif($lastname -eq $null){
         Write-Warning "$CurrentSam is missing lastname"
-        return
+        $OutPutObject| Add-Member -Type NoteProperty -Name "NewSAM"-Value "MISSINGLASTNAME"
+        return $OutPutObject
     }
 
     #clean firstname and lastname from illegal chars.
