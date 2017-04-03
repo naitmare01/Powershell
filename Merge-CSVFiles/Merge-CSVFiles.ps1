@@ -2,7 +2,7 @@ Function Merge-CSVFiles
 {
 Param(
 [string]$XLFileNameOutPut = "Placeholder",
-$CSVPath = "C:\Temp\170403\knetagrapp2001p", ## Soruce CSV Folder
+$CSVPath = "C:\Temp\CSVCatalog", ## Soruce CSV Folder
 $XLOutput ="$CSVPath\$XLFileNameOutPut.xlsx" ## Output file name
 )
 
