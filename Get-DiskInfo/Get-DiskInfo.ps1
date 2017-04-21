@@ -11,7 +11,7 @@ $Disk
     return $OutPutObject
 }
 
-$Computers = "knetdeploy201", "knetworker201"
+$Computers = "SERVER1", "SERVER2"
 
 foreach($computer in $computers){
     $DiskInfo = Get-WmiObject Win32_Volume -Filter "DriveType='3'" -ComputerName $computer
