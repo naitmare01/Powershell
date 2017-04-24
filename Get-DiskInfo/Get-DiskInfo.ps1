@@ -3,7 +3,7 @@ param(
 $Name
 )
     begin{
-        $DiskInfo = Get-WmiObject Win32_Volume -Filter "DriveType='3'" -ComputerName $Name
+        $DiskInfo = Get-WmiObject Win32_Volume -Filter "DriveType='3'" -ComputerName $Name | Where-Object{$_.Label -notLike "System Reserved"}
     }
 
     process{
