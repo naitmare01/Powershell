@@ -7,7 +7,7 @@ param(
 #construct custom Object
 $CustomObject = New-Object System.Object
     $enheten = $distinguishedname.Split(',')[2]
-    $enheten =$enheten -replace ("OU=","")
+    $enheten = $enheten -replace ("OU=","")
 
     $stift = $distinguishedname.Split(',')[3]
     $stift = $stift -replace("OU=","")
