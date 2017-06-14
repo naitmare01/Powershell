@@ -18,7 +18,7 @@ Get-LocalAdmin -Computer NAME -GroupName "GROUP"
 
 ------------                              --------                                  ----------                                -----------------                       
 
-localhost                                 test                                      {Administrators}                          False               
+localhost                                 GROUP                                      {Administrators}                          False               
 #>
 param(
 #Parameter for computer name. Input is Netbios
