@@ -14,9 +14,11 @@ function Get-LocalAdmin{
 .INPUTS
 Get-LocalAdmin -Computer NAME -GroupName "GROUP"
 .OUTPUTS
-Name                                                        LocalAdminGroup                                             AdminGroupPresent                                         
-----                                                        ---------------                                             -----------------                                         
-NAME                                                        GROUP                                                       True      
+ ComputerName                              Identity                                  LocalGroup                                AdminGroupPresent                       
+
+------------                              --------                                  ----------                                -----------------                       
+
+localhost                                 test                                      {Administrators}                          False               
 #>
 param(
 #Parameter for computer name. Input is Netbios
