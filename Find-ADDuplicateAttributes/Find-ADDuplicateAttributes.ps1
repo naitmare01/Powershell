@@ -47,10 +47,10 @@ function Find-ADDuplicateAttributes{
         }
 
         $DuplicateUsers = $GetAllUsers.$AttributeValues | Group-Object | Where-Object{$_.count -gt 1}
-        $counter = 0
+        #$counter = 0
             foreach($dUser in $DuplicateUsers){
-                $Counter ++
-                Write-Progress -Activity "Looking for duplicated value: $AttributeValues" -PercentComplete(($Counter / $DuplicateUsers.Count)*100)
+                #$Counter ++
+                #Write-Progress -Activity "Looking for duplicated value: $AttributeValues" -PercentComplete(($Counter / $DuplicateUsers.Count)*100)
                 $customObject = New-Object System.Object
                 $customObject | Add-Member -Type NoteProperty -Name Identiy -Value $dUser.Name
                 $customObject | Add-Member -Type NoteProperty -Name DuplicateValue -Value $AttributeValues
