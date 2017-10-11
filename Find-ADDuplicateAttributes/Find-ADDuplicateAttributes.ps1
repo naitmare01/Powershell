@@ -1,6 +1,9 @@
 <#
 .Synopsis
-   Scans the AD that the current user is logged on to adter duplicates in UPN(user principalname) or Samaccountname. Other value can be scanned for aswell.
+   Scans the AD that the current user is logged on to find duplicates in UPN(user principalname) or Samaccountname. 
+   Other value can be scanned for aswell.
+
+   Current version only support AD-User
 .DESCRIPTION
    Long description
 .EXAMPLE
