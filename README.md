@@ -1,3 +1,3 @@
 # Powershell
 
-This repo will contains usefull Powershell scripts. 
+This repo will contains useful Powershell scripts. 
