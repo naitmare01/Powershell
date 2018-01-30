@@ -1,8 +1,19 @@
 
-function errorHandling{
-    $errormsg = ($error[0].CategoryInfo.Activity)
-    $errormsg = $errormsg + " " + $error[0].Exception.Message
-    Write-Warning "An error occurred: $errormsg"
+function Get-ErrorReason{
+    [cmdletbinding()]
+    param(
+    )
+    begin{}
+
+    process{
+        $errormsg = ($error[0].CategoryInfo.Activity)
+        $errormsg = $errormsg + " " + $error[0].Exception.Message
+        $errormsg = "An error occurred: $errormsg"
+    }
+
+    end{
+        return $errormsg
+    }
 }
 
 
@@ -12,14 +23,14 @@ try{
 #Object not found
 catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]
 {
-    errorHandling
+    Get-ErrorReason
 }
 #Insufficient rights
 catch [Microsoft.ActiveDirectory.Management.ADException]
 {
-    errorHandling
+    Get-ErrorReason
 }
 #Other issue
 catch{
-    errorHandling
+    Get-ErrorReason
 }
