@@ -429,7 +429,6 @@ function New-PKUEUser{
                 -Company $G.company `
                 -Name $displayname `
                 -DisplayName $displayname `
-                -EmailAddress $G.email `
                 -GivenName $G.GivenName `
                 -SamAccountName $G.newSam `
                 -Surname $G.SurName `
@@ -440,6 +439,10 @@ function New-PKUEUser{
             catch{
                 Write-Warning "$UserDN could not be created"
             }#End catch
+
+            if($G.email){
+                Set-Aduser -EmailAddress $G.email
+            }#End if
 
             if($Initial){
                 Set-Aduser -Identity $G.NewSam -Initial $Initial
