@@ -681,9 +681,9 @@ Function New-WindowsForms{
     process{
         $Form = New-Object System.Windows.Forms.Form 
         $Form.Size = New-Object System.Drawing.Size($Size) 
-        $form.MaximizeBox = $false 
+        #$form.MaximizeBox = $false 
         $Form.StartPosition = "CenterScreen" 
-        $Form.FormBorderStyle = 'Fixed3D' 
+        $Form.FormBorderStyle = 'Sizable' 
         $Form.Text = $Text
         $Font = New-Object System.Drawing.Font("Arial",10,[System.Drawing.FontStyle]::Bold) 
         $form.Font = $Font 
