@@ -441,7 +441,7 @@ function New-PKUEUser{
             }#End catch
 
             if($G.email){
-                Set-Aduser -EmailAddress $G.email
+                Set-Aduser -Identity $G.NewSam -EmailAddress $G.email
             }#End if
 
             if($Initial){
