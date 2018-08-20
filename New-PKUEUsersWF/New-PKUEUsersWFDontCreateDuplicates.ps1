@@ -442,7 +442,7 @@ function New-PKUEUser{
                     -SamAccountName $G.newSam `
                     -Surname $G.SurName `
                     -UserPrincipalName ($G.newSam + "@svenskakyrkan.se") `
-                    -Path $G.path
+                    -Path $G.path -PassThru | Enable-AdAccount
     
                 }#end try
                 catch{
