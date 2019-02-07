@@ -82,8 +82,12 @@ function Get-FreeComputerName{
     process{
         if($null -eq $Computers){
             $AvalibleNumber = "001"
+            $compName = $StiftDescription.description + "-$ComputerType-" + $EnhetDescription.description + "-" + $AvalibleNumber
             $customObjectFirstFree = New-Object System.Object
             $customObjectFirstFree | Add-Member -Type NoteProperty -Name FirstFree -Value $AvalibleNumber
+            $customObjectFirstFree | Add-Member -Type NoteProperty -Name StiftDescription -Value $StiftDescription.description
+            $customObjectFirstFree | Add-Member -Type NoteProperty -Name EnhetDescription -Value $EnhetDescription.description
+            $customObjectFirstFree | Add-Member -Type NoteProperty -Name FreeComputerName -Value $compName
             $customObjectFirstFree | Add-Member -Type NoteProperty -Name SearchBase -Value "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
         }#End if
         else{
