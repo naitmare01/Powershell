@@ -62,17 +62,17 @@ function Get-FreeComputerName{
     begin{
         $returnArray = [System.Collections.ArrayList]@()
 
-        if(-not (Get-Module -Name "ActiveDirectory")){
+        if (-not (Get-Module -Name "ActiveDirectory")) {
             Throw "Module ActiveDirectory is not loaded"
-        }#End if
+        }
         
 
         if($ComputerType -like "LAP"){
             $ComputerTypeOU = "Mobile"   
-        }#End if
+        }
         else{
             $ComputerTypeOU = "Stationary"
-        }#End if
+        }
 
         $Computers = Get-ADComputer -Filter * -SearchBase "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
         $StiftDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Stift,$Searchbase" -SearchScope Base -Properties description
@@ -88,32 +88,49 @@ function Get-FreeComputerName{
         }#End if
         else{
             foreach($c in $Computers){
+    
                 try{
                     [int]$number = $c.Name.Split('-')[3]
                     $customObject = New-Object System.Object
                     $customObject | Add-Member -Type NoteProperty -Name TakenNumber -Value $number
                     [void]$returnArray.Add($customObject)
-                }#End try
+                }
                 catch{
                     #
-                }#End catch
+                }
             
             }#End foreach
 
                 $range = 1..999
-                [string]$FirstFree = (Compare-Object $range $returnArray.TakenNumber | Where-Object{$_.SideIndicator -like "<="} | Select-Object -First 1).inputobject
-            
-                if($FirstFree.length -like 1){
-                    $AvalibleNumber = "00$FirstFree"
-                }#End if
-                elseif($FirstFree.Length -like 2){
-                    $AvalibleNumber = "0$FirstFree"
-                }#End elseif
-                else{
-                    #Default
-                }#End else
+                
+                foreach($n in (Compare-Object $range $returnArray.TakenNumber | Where-Object{$_.SideIndicator -like "<="}).inputobject){
+                    $intLength = $n.ToString().Length
 
-                $compName = $StiftDescription.description + "-$ComputerType-" + $EnhetDescription.description + "-" + $AvalibleNumber
+                    if($intLength -eq 1){
+                        $AvalibleNumber = "00$n"
+                    }#End if
+                    elseif($intLength -eq 2){
+                        $AvalibleNumber = "0$n"
+                    }#End elseif
+                    else{
+                        $AvalibleNumber = $n
+                    }#End else
+
+                    $compName = $StiftDescription.description + "-$ComputerType-" + $EnhetDescription.description + "-" + $AvalibleNumber
+
+                    try{
+                        Get-ADComputer $compName -ErrorAction Stop | Out-Null
+                        Write-Verbose "$compName existerar på en annan enhet. Försöker nästa nummer"
+                    }#End try
+                    catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]{
+                        Write-Verbose "$compName är ledigt."
+                        break
+                    }#End catch
+                    catch{
+                        Write-Verbose $error[0].exception.GetType().fullname
+                    }#End catch
+
+                }#End foreach
 
                 $customObjectFirstFree = New-Object System.Object
                 $customObjectFirstFree | Add-Member -Type NoteProperty -Name FirstFree -Value $AvalibleNumber
