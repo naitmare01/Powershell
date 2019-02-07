@@ -12,7 +12,7 @@
         Integrationen sker genom att en Internet Explrorer öppnas och information om hur man tar fram administratörslösenordet visas. 
     .NOTES
         Senast uppdaterad: 
-			David Berndtsson, 2019-01-21, Data Ductus Uppsala
+			David Berndtsson, 2019-02-07, Data Ductus Uppsala
 #>
 Function Get-IsLaptop{
     Param(
