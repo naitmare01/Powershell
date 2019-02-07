@@ -37,7 +37,7 @@ Function Get-IsLaptop{
             $customObject = New-Object System.Object
             $customObject | Add-Member -Type NoteProperty -Name Computer -Value $c
             $customObject | Add-Member -Type NoteProperty -Name Laptop -Value $isLaptop
-            [void]$returnArray.Add($customObject)
+            $returnArray.Add($customObject) | Out-Null
         }#End foreach
     }#end process
     end{
@@ -97,11 +97,11 @@ function Get-FreeComputerName{
                     [int]$number = $c.Name.Split('-')[3]
                     $customObject = New-Object System.Object
                     $customObject | Add-Member -Type NoteProperty -Name TakenNumber -Value $number
-                    [void]$returnArray.Add($customObject)
-                }
+                    $returnArray.Add($customObject) | Out-Null
+                }#End try
                 catch{
                     #
-                }
+                }#End catch
             
             }#End foreach
 
@@ -179,7 +179,7 @@ function Get-EnhetList{
             $customObject | Add-Member -Type NoteProperty -Name Enhet -Value $Enhet.Name
             $customObject | Add-Member -Type NoteProperty -Name Description -Value $Enhet.description
             $customObject | Add-Member -Type NoteProperty -Name Nummer -Value $i
-            [void]$returnArray.Add($customObject)
+            $returnArray.Add($customObject) | Out-Null
             $i = $i + 1
         }#End foreach
     }#End process
@@ -215,7 +215,7 @@ function Get-StiftList{
             $customObject | Add-Member -Type NoteProperty -Name Enhet -Value ""
             $customObject | Add-Member -Type NoteProperty -Name Description -Value $Stift.description
             $customObject | Add-Member -Type NoteProperty -Name Nummer -Value $i
-            [void]$returnArray.Add($customObject)
+            $returnArray.Add($customObject) | Out-Null
             $i = $i + 1
         }#End foreach
     }#End process
@@ -526,9 +526,9 @@ else{
 
 #This script relies on the module activedirectory to run. See custom module Install-ActiveDirectory
 Import-Module activedirectory
-[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")  
-[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
-[void] [System.Windows.Forms.Application]::EnableVisualStyles() 
+[System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") | Out-Null
+[System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
+[System.Windows.Forms.Application]::EnableVisualStyles() | Out-Null
 Add-Type -AssemblyName PresentationFramework
 
 ###Build basic forms
@@ -591,8 +591,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
     #DropDownStift
     $stiftlist = Get-StiftList
     ForEach ($Item in $stiftlist.Stift) {
-        
-        [void] $DropDownStift.Items.Add($Item)
+        $DropDownStift.Items.Add($Item) | Out-Null
     }
     #End DropDownStift
 
@@ -605,8 +604,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
             $DropDownEnhet.Text = "--Välj Enhet--"
             $EnhetList = Get-EnhetList -Stift $DropDownStift.SelectedItem
             ForEach ($Item in $EnhetList.Enhet) {
-        
-                [void] $DropDownEnhet.Items.Add($Item)
+                $DropDownEnhet.Items.Add($Item) | Out-Null
             }
         }
     })
@@ -624,34 +622,18 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
             else{
                 $CompType = "LAP"
             }
-            $FirstFreeComputernumber = Get-FreeComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType
-            $compName = $FirstFreeComputernumber.FreeComputerName
-            try{
-                $adcomputerExist = Get-AdComputer $compName -ErrorAction Stop
-                
-                $TextBox.Clear()
-                $TextBox.AppendText("Dator med namn $compName finns redan i ADet men under fel enhet.")
-                $TextBox.AppendText("`n`n")
-                $TextBox.AppendText("Datorns DN: " + $adcomputerExist.distinguishedname)
-
-                $Messageboxbody = "Datorn med namn $compName finns i ADet men under fel enhet. Kontakta kanslistöd på 018 - 16 97 00 eller kanlistod@svenskakyrkan.se och be dom flytta datornkontot i ADet till rätt enhet."
-                
-                $ButtonType = [System.Windows.MessageBoxButton]::Ok
-                $MessageboxTitle = "Fel vid flytt av datorkonto"
-                $MessageIcon = [System.Windows.MessageBoxImage]::Error
-                [System.Windows.MessageBox]::Show($Messageboxbody,$MessageboxTitle,$ButtonType,$messageicon)
-            }#End try
-            catch{
-                $TargetPath = $FirstFreeComputernumber.SearchBase
-                $TextBox.Clear()
-                $TextBox.Text = ("Stift är: " + $DropDownStift.SelectedItem)
-                $TextBox.AppendText("`n`n")
-                $TextBox.AppendText("Enhet är: " + $DropDownEnhet.SelectedItem)
-                $TextBox.AppendText("`n`n")
-                $TextBox.AppendText("Ny sökväg för datorn är: " + $TargetPath)
-                $TextBox.AppendText("`n`n")
-                $TextBox.AppendText("Datornamn är: " + $FirstFreeComputernumber.StiftDescription + "-$CompType-" + $FirstFreeComputernumber.EnhetDescription + "-" + $FirstFreeComputernumber.FirstFree)
-            }#End catch
+            $global:FirstFreeComputernumber = Get-FreeComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType
+            $global:compName = $FirstFreeComputernumber.FreeComputerName
+            
+            $TargetPath = $FirstFreeComputernumber.SearchBase
+            $TextBox.Clear()
+            $TextBox.Text = ("Stift är: " + $DropDownStift.SelectedItem)
+            $TextBox.AppendText("`n`n")
+            $TextBox.AppendText("Enhet är: " + $DropDownEnhet.SelectedItem)
+            $TextBox.AppendText("`n`n")
+            $TextBox.AppendText("Ny sökväg för datorn är: " + $TargetPath)
+            $TextBox.AppendText("`n`n")
+            $TextBox.AppendText("Datornamn är: $compName")
         }
     })
     #End ButtonGenerateName
@@ -659,8 +641,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
     #ButtonRenameComp
     $ButtonRenameComp.Add_Click({
         if($TextBox.Text -like "*Datornamn är: *"){
-            $NewCompName = ($TextBox.Text.Split("`n") -replace "Datornamn är:"| Select-Object -Last 1) -replace " "
-            $Messageboxbody = "Är du säker på att du vill byta datornamn från $env:computername till $NewCompName"
+            $Messageboxbody = "Är du säker på att du vill byta datornamn från $env:computername till $global:compName"
             
             $ButtonType = [System.Windows.MessageBoxButton]::YesNoCancel
             $MessageboxTitle = "Byt datornamn"
@@ -670,20 +651,10 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
             if($MessageBox -like "Yes"){
                 #Start try to rename the computer
                 try{
-                    Rename-Computer -NewName $NewCompName -DomainCredential ($Cred = (Get-Credential -Message "Enter your username and password to perform the renaming of this computer. Format must be DOMAIN\USERNAME")) -ErrorAction Stop
+                    Rename-Computer -NewName $global:compName -DomainCredential ($Cred = (Get-Credential -Message "Enter your username and password to perform the renaming of this computer. Format must be DOMAIN\USERNAME")) -ErrorAction Stop
 
-                    if($RadioButtonLaptop.Checked -eq $true){
-                        $CompType = "LAP"
-                    }
-                    elseif($RadioButtonWSN.Checked -eq $true){
-                        $CompType = "WSN"
-                    }
-                    else{
-                        $CompType = "LAP"
-                    }
-
-                    [void]$ProgressBarForm.Show()
-                    [void]$ProgressBarForm.Focus()
+                    $ProgressBarForm.Show() | Out-Null
+                    $ProgressBarForm.Focus() | Out-Null
                     $TimeRange = 1..15
                     $processed = 0
                     ForEach ($i in $TimeRange) {
@@ -695,14 +666,14 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
                     }
                     $ProgressBarForm.Close()
 
-                    $TargetPath = (Get-FreeComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType).SearchBase
+                    $TargetPath = $global:FirstFreeComputernumber.SearchBase
                     
                     #Start try to move the computer
                     try{
-                        Get-ADComputer $NewCompName | Move-ADObject -TargetPath $TargetPath -Credential $Cred -ErrorAction Stop
+                        Get-ADComputer $global:compName | Move-ADObject -TargetPath $TargetPath -Credential $Cred -ErrorAction Stop
     
                         #Restart Computer popup
-                        $Messageboxbody ="Du har nu bytt namn på datorn till $NewCompName. Vill du ändra administratörslösenordet på datorn innan du startar om? `n`nInformation om hur du får fram det lokala administratörslösenordet kommer att skrivas ut i applikationen."
+                        $Messageboxbody ="Du har nu bytt namn på datorn till $global:compName. Vill du ändra administratörslösenordet på datorn innan du startar om? `n`nInformation om hur du får fram det lokala administratörslösenordet kommer att skrivas ut i applikationen."
                 
                         $ButtonType = [System.Windows.MessageBoxButton]::YesNoCancel
                         $MessageboxTitle = "Ändra administratörslösenordet"
@@ -711,7 +682,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
     
                         if($Messagebox -like "Yes"){
                             #Restart-Computer
-                            $Browser=New-Object -ComObject internetexplorer.application
+                            $Browser = New-Object -ComObject internetexplorer.application
                             $Browser.navigate2("http://bestallningsportal.system.svenskakyrkan.se/adminpages/adminartikel.aspx")
                             $Browser.visible=$true
 
@@ -732,7 +703,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
                         }#End if
                         else{
                             $TextBox.Clear()
-                            $TextBox.Text = "Datorn har bytt namn till $NewCompName, en omstart av datorn krävs för att slutföra. Starta om datorn nu."
+                            $TextBox.Text = "Datorn har bytt namn till $global:compName, en omstart av datorn krävs för att slutföra. Starta om datorn nu."
                             $TextBox.AppendText("`n`n")
                             $TextBox.AppendText("`n`n")
                             $TextBox.AppendText("1. Klicka på 'File'")
@@ -767,7 +738,16 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
     #End ButtonRenameComp
 
 $ExitToolstripMenuItem.Add_Click({
-    [System.Windows.Forms.Application]::Exit($null)
+    $Messageboxbody ="Vill du avsluta scriptet?"
+                
+    $ButtonType = [System.Windows.MessageBoxButton]::YesNoCancel
+    $MessageboxTitle = "Avsluta Scriptet"
+    $MessageIcon = [System.Windows.MessageBoxImage]::Warning
+    $MessageBox = [System.Windows.MessageBox]::Show($Messageboxbody,$MessageboxTitle,$ButtonType,$messageicon)
+
+    if($Messagebox -like "Yes"){
+        [System.Windows.Forms.Application]::Exit($null)
+    }#End if
 })
 
 $RestartComputerToolstripMenuItem.Add_Click({
@@ -805,10 +785,10 @@ $Form.Controls.Add($ButtonRenameComp)
 $ProgressBarForm.Controls.Add($ProgresBar)
 $ProgressBarForm.Controls.Add($ProgresLabel)
 $Form.Controls.Add($Menustrip)
-[void]$Menustrip.Items.Add($FileToolstripMenuItem)
-[void]$FileToolstripMenuItem.DropDownItems.Add($RestartComputerToolstripMenuItem)
-[void]$FileToolstripMenuItem.DropDownItems.Add($ToolStripSeparator)
-[void]$FileToolstripMenuItem.DropDownItems.Add($ExitToolstripMenuItem)
+$Menustrip.Items.Add($FileToolstripMenuItem) | Out-Null
+$FileToolstripMenuItem.DropDownItems.Add($RestartComputerToolstripMenuItem) | Out-Null
+$FileToolstripMenuItem.DropDownItems.Add($ToolStripSeparator) | Out-Null
+$FileToolstripMenuItem.DropDownItems.Add($ExitToolstripMenuItem) | Out-Null
 ###End Add objects to the form. 
 
 $form.WindowState = [System.Windows.Forms.FormWindowState]::Maximized
