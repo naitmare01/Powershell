@@ -673,7 +673,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
                         Get-ADComputer $global:compName | Move-ADObject -TargetPath $TargetPath -Credential $Cred -ErrorAction Stop
     
                         #Restart Computer popup
-                        $Messageboxbody ="Du har nu bytt namn på datorn till $global:compName. Vill du ändra administratörslösenordet på datorn innan du startar om? `n`nInformation om hur du får fram det lokala administratörslösenordet kommer att skrivas ut i applikationen."
+                        $Messageboxbody = "Du har nu bytt namn på datorn till $global:compName. Vill du ändra administratörslösenordet på datorn innan du startar om? `n`nInformation om hur du får fram det lokala administratörslösenordet kommer att skrivas ut i applikationen."
                 
                         $ButtonType = [System.Windows.MessageBoxButton]::YesNoCancel
                         $MessageboxTitle = "Ändra administratörslösenordet"
