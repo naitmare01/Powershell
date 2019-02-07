@@ -55,6 +55,7 @@ function Get-ComputerNumber{
     [parameter(Mandatory=$True)]
     [string]$Enhet,
     [parameter(Mandatory=$True)]
+    [ValidateSet('LAP','WSN')]
     [string]$ComputerType
     )#End param
 
@@ -67,22 +68,24 @@ function Get-ComputerNumber{
         
 
         if($ComputerType -like "LAP"){
-            $ComputerType = "Mobile"   
+            $ComputerTypeOU = "Mobile"   
         }
         else{
-            $ComputerType = "Stationary"
+            $ComputerTypeOU = "Stationary"
         }
 
-        Write-Verbose "OU=$ComputerType,OU=$Enhet,OU=$Stift,$Searchbase"
-        $Computers = Get-ADComputer -Filter * -SearchBase "OU=$ComputerType,OU=$Enhet,OU=$Stift,$Searchbase"
+        Write-Verbose "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
+        $Computers = Get-ADComputer -Filter * -SearchBase "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
+        $StiftDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Stift,$Searchbase" -SearchScope Base -Properties description
+        $EnhetDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Enhet,OU=$Stift,$Searchbase" -SearchScope Base -Properties description
     }#End begin
 
     process{
-        if($Computers -eq $null){
+        if($null -eq $Computers){
             $AvalibleNumber = "001"
             $customObjectFirstFree = New-Object System.Object
             $customObjectFirstFree | Add-Member -Type NoteProperty -Name FirstFree -Value $AvalibleNumber
-            $customObjectFirstFree | Add-Member -Type NoteProperty -Name SearchBase -Value "OU=$ComputerType,OU=$Enhet,OU=$Stift,$Searchbase"
+            $customObjectFirstFree | Add-Member -Type NoteProperty -Name SearchBase -Value "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
         }#End if
         else{
             foreach($c in $Computers){
@@ -101,8 +104,6 @@ function Get-ComputerNumber{
 
                 $range = 1..999
                 [string]$FirstFree = (Compare-Object $range $returnArray.TakenNumber | Where-Object{$_.SideIndicator -like "<="} | Select-Object -First 1).inputobject
-                Write-Verbose $FirstFree
-                Write-Verbose $FirstFree.length
             
                 if($FirstFree.length -like 1){
                     $AvalibleNumber = "00$FirstFree"
@@ -115,7 +116,9 @@ function Get-ComputerNumber{
                 }#End else
                 $customObjectFirstFree = New-Object System.Object
                 $customObjectFirstFree | Add-Member -Type NoteProperty -Name FirstFree -Value $AvalibleNumber
-                $customObjectFirstFree | Add-Member -Type NoteProperty -Name SearchBase -Value "OU=$ComputerType,OU=$Enhet,OU=$Stift,$Searchbase"
+                $customObjectFirstFree | Add-Member -Type NoteProperty -Name StiftDescription -Value $StiftDescription.description
+                $customObjectFirstFree | Add-Member -Type NoteProperty -Name EnhetDescription -Value $EnhetDescription.description
+                $customObjectFirstFree | Add-Member -Type NoteProperty -Name SearchBase -Value "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
 
         }#End else
     }#End process
@@ -194,41 +197,6 @@ function Get-StiftList{
         }#End foreach
     }#End process
     
-    end{
-        return $returnArray
-    }#End end
-}#End function
-function Get-ComputerName{
-    [CmdletBinding()]
-    param (
-    #Searchbase to list OUs. 
-    [parameter(ValueFromPipeline=$True)]
-    [string]$Searchbase = "OU=Computers,OU=ASP,DC=knet,DC=ad,DC=svenskakyrkan,DC=se",
-    [parameter(Mandatory=$True)]
-    [string]$Stift,
-    [parameter(Mandatory=$True)]
-    [string]$Enhet
-    )#End param
-    
-    begin{
-        $returnArray = [System.Collections.ArrayList]@()
-
-        if (-not (Get-Module -Name "ActiveDirectory")) {
-            Throw "Module ActiveDirectory is not loaded"
-        }
-
-    }#End Begin
-
-    process{
-        $StiftDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Stift,$Searchbase" -SearchScope Base -Properties description
-        $EnhetDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Enhet,OU=$Stift,$Searchbase" -SearchScope Base -Properties description
-
-        $customObject = New-Object System.Object
-        $customObject | Add-Member -Type NoteProperty -Name StiftDescription -Value $StiftDescription.description
-        $customObject | Add-Member -Type NoteProperty -Name EnhetDescription -Value $EnhetDescription.description
-        [void]$returnArray.Add($customObject)
-    }#End process
-
     end{
         return $returnArray
     }#End end
@@ -633,9 +601,9 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
             else{
                 $CompType = "LAP"
             }
-            $StiftsAndEnhetsNumber = Get-ComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem
+            #$StiftsAndEnhetsNumber = Get-ComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem
             $FirstFreeComputernumber = Get-ComputerNumber -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType
-            $compName = $StiftsAndEnhetsNumber.StiftDescription + "-$CompType-" + $StiftsAndEnhetsNumber.EnhetDescription + "-" + $FirstFreeComputernumber.FirstFree
+            $compName = $FirstFreeComputernumber.StiftDescription + "-$CompType-" + $FirstFreeComputernumber.EnhetDescription + "-" + $FirstFreeComputernumber.FirstFree
             try{
                 $adcomputerExist = Get-AdComputer $compName -ErrorAction Stop
                 
@@ -649,7 +617,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
                 $ButtonType = [System.Windows.MessageBoxButton]::Ok
                 $MessageboxTitle = "Fel vid flytt av datorkonto"
                 $MessageIcon = [System.Windows.MessageBoxImage]::Error
-                $MessageBox = [System.Windows.MessageBox]::Show($Messageboxbody,$MessageboxTitle,$ButtonType,$messageicon)
+                [System.Windows.MessageBox]::Show($Messageboxbody,$MessageboxTitle,$ButtonType,$messageicon)
             }#End try
             catch{
                 $TargetPath = $FirstFreeComputernumber.SearchBase
@@ -660,7 +628,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
                 $TextBox.AppendText("`n`n")
                 $TextBox.AppendText("Ny sökväg för datorn är: " + $TargetPath)
                 $TextBox.AppendText("`n`n")
-                $TextBox.AppendText("Datornamn är: " + $StiftsAndEnhetsNumber.StiftDescription + "-$CompType-" + $StiftsAndEnhetsNumber.EnhetDescription + "-" + $FirstFreeComputernumber.FirstFree)
+                $TextBox.AppendText("Datornamn är: " + $FirstFreeComputernumber.StiftDescription + "-$CompType-" + $FirstFreeComputernumber.EnhetDescription + "-" + $FirstFreeComputernumber.FirstFree)
             }#End catch
         }
     })
