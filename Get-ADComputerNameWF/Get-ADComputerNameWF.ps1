@@ -100,10 +100,17 @@ function Get-FreeComputerName{
                     $returnArray.Add($customObject) | Out-Null
                 }#End try
                 catch{
-                    #
+                    $cName = $c.name
+                    Write-Verbose "$cName följer inte namnstandard"
                 }#End catch
             
             }#End foreach
+
+            if(($returnArray | Measure-Object).Count-eq 0){
+                $customObject = New-Object System.Object
+                $customObject | Add-Member -Type NoteProperty -Name TakenNumber -Value 0
+                $returnArray.add($customObject) | Out-Null
+            }#End if
 
                 $range = 1..999
                 
