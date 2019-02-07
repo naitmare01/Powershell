@@ -44,7 +44,7 @@ Function Get-IsLaptop{
         return $customObject
     }#End end
 }#end function Get-Laptop
-function Get-ComputerNumber{
+function Get-FreeComputerName{
     [CmdletBinding()]
     param(
     #Searchbase to list OUs. 
@@ -62,19 +62,18 @@ function Get-ComputerNumber{
     begin{
         $returnArray = [System.Collections.ArrayList]@()
 
-        if (-not (Get-Module -Name "ActiveDirectory")) {
+        if(-not (Get-Module -Name "ActiveDirectory")){
             Throw "Module ActiveDirectory is not loaded"
-        }
+        }#End if
         
 
         if($ComputerType -like "LAP"){
             $ComputerTypeOU = "Mobile"   
-        }
+        }#End if
         else{
             $ComputerTypeOU = "Stationary"
-        }
+        }#End if
 
-        Write-Verbose "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
         $Computers = Get-ADComputer -Filter * -SearchBase "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
         $StiftDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Stift,$Searchbase" -SearchScope Base -Properties description
         $EnhetDescription = Get-ADOrganizationalUnit -Filter * -SearchBase "OU=$Enhet,OU=$Stift,$Searchbase" -SearchScope Base -Properties description
@@ -89,16 +88,15 @@ function Get-ComputerNumber{
         }#End if
         else{
             foreach($c in $Computers){
-    
                 try{
                     [int]$number = $c.Name.Split('-')[3]
                     $customObject = New-Object System.Object
                     $customObject | Add-Member -Type NoteProperty -Name TakenNumber -Value $number
                     [void]$returnArray.Add($customObject)
-                }
+                }#End try
                 catch{
                     #
-                }
+                }#End catch
             
             }#End foreach
 
@@ -114,10 +112,14 @@ function Get-ComputerNumber{
                 else{
                     #Default
                 }#End else
+
+                $compName = $StiftDescription.description + "-$ComputerType-" + $EnhetDescription.description + "-" + $AvalibleNumber
+
                 $customObjectFirstFree = New-Object System.Object
                 $customObjectFirstFree | Add-Member -Type NoteProperty -Name FirstFree -Value $AvalibleNumber
                 $customObjectFirstFree | Add-Member -Type NoteProperty -Name StiftDescription -Value $StiftDescription.description
                 $customObjectFirstFree | Add-Member -Type NoteProperty -Name EnhetDescription -Value $EnhetDescription.description
+                $customObjectFirstFree | Add-Member -Type NoteProperty -Name FreeComputerName -Value $compName
                 $customObjectFirstFree | Add-Member -Type NoteProperty -Name SearchBase -Value "OU=$ComputerTypeOU,OU=$Enhet,OU=$Stift,$Searchbase"
 
         }#End else
@@ -601,9 +603,8 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
             else{
                 $CompType = "LAP"
             }
-            #$StiftsAndEnhetsNumber = Get-ComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem
-            $FirstFreeComputernumber = Get-ComputerNumber -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType
-            $compName = $FirstFreeComputernumber.StiftDescription + "-$CompType-" + $FirstFreeComputernumber.EnhetDescription + "-" + $FirstFreeComputernumber.FirstFree
+            $FirstFreeComputernumber = Get-FreeComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType
+            $compName = $FirstFreeComputernumber.FreeComputerName
             try{
                 $adcomputerExist = Get-AdComputer $compName -ErrorAction Stop
                 
@@ -673,7 +674,7 @@ $RestartComputerToolstripMenuItem = New-WindowsFormsToolStripMenuItem -Text "Res
                     }
                     $ProgressBarForm.Close()
 
-                    $TargetPath = (Get-ComputerNumber -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType).SearchBase
+                    $TargetPath = (Get-FreeComputerName -Stift $DropDownStift.SelectedItem -Enhet $DropDownEnhet.SelectedItem -ComputerType $CompType).SearchBase
                     
                     #Start try to move the computer
                     try{
@@ -792,8 +793,3 @@ $Form.Controls.Add($Menustrip)
 $form.WindowState = [System.Windows.Forms.FormWindowState]::Maximized
 $form.Add_Shown({$form.Activate()})
 $Form.ShowDialog()
-
-<#
-AD modulen slår på DD test datorer
-Script gpon slår på davbern1 i dd test
-#>
