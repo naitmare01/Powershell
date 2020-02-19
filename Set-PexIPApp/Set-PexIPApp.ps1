@@ -1,4 +1,4 @@
-function Set-PexIPApp{
+ function Set-PexIPApp{
     <#
     .SYNOPSIS
         A brief description of the function or script.
@@ -69,7 +69,8 @@ function Set-PexIPApp{
             Set-App -OrganizationApp -Identity $AppId -UserList $UniqueNewMemberList.member -DefaultStateForUser Enabled -ErrorAction Stop
         }#End try
         catch{
-            Write-Warning "Could not add user to the application."
+            #$failedUser = $UniqueNewMemberList.member
+            Write-Warning $Error[0].Exception
         }#End catch
         
         try{
@@ -95,3 +96,6 @@ function Set-PexIPApp{
         return $returnArray
     }#End end
 }#End function
+
+
+Set-PexIPApp -CasServer knetex2003.knet.ad.svenskakyrkan.se -UserFilter G.Sec.General.PexipKnappOutlook -AppId 21d9b063-4a90-4ae9-8f6d-ecad69db5489 #| Out-Null  
