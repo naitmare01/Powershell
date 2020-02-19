@@ -98,4 +98,4 @@
 }#End function
 
 
-Set-PexIPApp -CasServer knetex2003.knet.ad.svenskakyrkan.se -UserFilter G.Sec.General.PexipKnappOutlook -AppId 21d9b063-4a90-4ae9-8f6d-ecad69db5489 #| Out-Null  
+Set-PexIPApp -CasServer EXCHANGESERVER -UserFilter G.Sec.General.PexipKnappOutlook -AppId APPIDGUID #| Out-Null  

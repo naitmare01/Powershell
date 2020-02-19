@@ -93,10 +93,10 @@ function Get-MailboxStatus{
 }#End function
 
 #1 Connect to Exchange
-$Connection = Connect-SessionCasServer -CasServer knetex2003.knet.ad.svenskakyrkan.se
+$Connection = Connect-SessionCasServer -CasServer "EXCHANGESERVER"
 
 #2 Test if user is on-prem or 365 and add to group
-Get-MailboxStatus -Identity david.berndtsson@svenskakyrkan.se, ludwig.eriksson@svenskakyrkan.se, thomas.vidgar@svenskakyrkan.se -OnPremGroup "G.Sec.General.PexipKnappOutlook" -o365Group "G.Sec.General.o365PexipKnappOutlook"
+Get-MailboxStatus -Identity "userwithfqdn" -OnPremGroup "GROUP" -o365Group "GROUP"
 
 #3 Remove session to Exchange
 Remove-PSSession $Connection
