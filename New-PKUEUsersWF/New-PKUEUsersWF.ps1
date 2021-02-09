@@ -41,7 +41,7 @@ Function Get-RandomGeneratedPassword{
         }#End else
 
         0..$NumberOfPassword | foreach-object{
-            $Password = ($PasswordString + 0..9 | sort {Get-Random})[0..$PasswordLength] -join ''
+            $Password = ($PasswordString + 0..9 | sort-object {Get-Random})[0..$PasswordLength] -join ''
             $LastNUmber = Get-Random -Minimum 0 -Maximum 9
             $Password = "$Password$LastNUmber"
             
@@ -795,7 +795,7 @@ param(
     foreach ($Entry in $Source){
         $Row = $DataTable.NewRow()
         foreach ($Column in $Columns.Name){
-            $Row["$($Column)"] = if($Entry.$Column -ne $null){($Entry | Select-Object -ExpandProperty $Column) -join ', '}else{$null}
+            $Row["$($Column)"] = if($null -ne $Entry.$Column){($Entry | Select-Object -ExpandProperty $Column) -join ', '}else{$null}
         }#End foreach
         $DataTable.Rows.Add($Row)
     }#End foreach
