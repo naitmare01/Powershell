@@ -9,7 +9,7 @@ function Get-AzureADEnterpriseApplication{
         Write-Verbose "$BL is a blacklisted domain"
       }#End foreach
       $returnArray = [System.Collections.ArrayList]@()
-      $AllApplications = Get-AzureADServicePrincipal
+      $AllApplications = Get-AzureADServicePrincipal -All $true  |where-object{$_.tags -contains "WindowsAzureActiveDirectoryIntegratedApp"}
     }#End begin
 
     process{
@@ -42,9 +42,8 @@ function Get-AzureADEnterpriseApplication{
         else{
           $AssignmentDomains = $null
         }#End else
-        $7days = (Get-Date).AddDays(-7)
-        $7days = Get-Date $7days -Format yyyy-MM-dd
-        $AllSignIns = Get-AzureADAuditSignInLogs -Filter "appId eq '$appid' and createdDateTime gt $7days"
+
+        $AllSignIns = Get-AzureADAuditSignInLogs -Filter "appId eq '$appid'"
         if($AllSignIns){
           foreach($signin in $AllSignIns){
             $UserDomain = ($signin.userprincipalname -split '@')[1]
@@ -83,4 +82,3 @@ function Get-AzureADEnterpriseApplication{
 }#End function
 
 #This function assumes that we are connected to AzureAD
-
