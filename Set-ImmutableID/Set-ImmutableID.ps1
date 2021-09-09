@@ -9,8 +9,12 @@ function Get-UserInformation{
         $returnArray = [System.Collections.ArrayList]@()
 
         #Static Variables to connect to domain and azuread.
-        $skolnetcredential = Get-Credential -Message "Plese enter credential for skolnet in netbios\samaccountname"
-        $Uppsalacredential = Get-Credential -Message "Plese enter credential for uppsala in netbios\samaccountname"
+        if($null -eq $skolnetcredential){
+            $skolnetcredential = Get-Credential -Message "Plese enter credential for skolnet in netbios\samaccountname"
+        }#End if
+        if($null -eq $Uppsalacredential){
+            $Uppsalacredential = Get-Credential -Message "Plese enter credential for uppsala in netbios\samaccountname"
+        }#End if
         $creds = @{"uppsala.se" = $Uppsalacredential
                    "skolnet.uppsala.se" = $skolnetcredential}
         $OutOfSyncOUs = @{"uppsala.se" = "OU=Users,DC=uppsala,DC=se"
@@ -18,7 +22,20 @@ function Get-UserInformation{
         $Domains = @{"uppsala.se" = "skolnet.uppsala.se"
                      "skolnet.uppsala.se" = "uppsala.se"}
         $AzureTenant = "uppsalakommun1.onmicrosoft.com"
-        Connect-AzureAD
+        try{
+            $AADSession = Get-AzureADCurrentSessionInfo -ErrorAction Stop
+            if($AADSession.TenantDomain -notlike $AzureTenant){
+                throw "Not connected to the correct Azure Tenant."
+            }#End if
+        }#End try
+        catch{
+            try{
+                Connect-AzureAD -erroraction stop # Get-AzureADCurrentSessionInfo
+            }#End Try
+            catch{
+                throw "Could not connect to AzureAD."
+            }#End catch
+        }#End catch
     }#End begin
 
     process{
@@ -26,10 +43,21 @@ function Get-UserInformation{
             $NewPrimaryDomain = $upn.split('@')[-1]
             $NewSecondaryDomain = $Domains[$NewPrimaryDomain]
 
-            $NewPrimaryUser = Get-Aduser -filter{UserPrincipalName -like $upn} -Properties employeenumber -server $NewPrimaryDomain -Credential $creds[$NewPrimaryDomain]
-            $NewPrimaryUserParentOU = $NewPrimaryUser.DistinguishedName -replace 'CN=.*?,((CN|OU)=.*$)', '$1'
-            $NewSecondaryUser = Get-Aduser -filter{employeenumber -like $NewPrimaryUser.EmployeeNumber} -Properties employeenumber -server $NewSecondaryDomain -Credential $creds[$NewSecondaryDomain]
-            $NewSecondaryUserParentOU = $NewSecondaryUser.DistinguishedName -replace 'CN=.*?,((CN|OU)=.*$)', '$1'
+            try{
+                $NewPrimaryUser = Get-Aduser -filter{UserPrincipalName -like $upn} -Properties employeenumber -server $NewPrimaryDomain -Credential $creds[$NewPrimaryDomain] -erroraction stop
+                $NewPrimaryUserParentOU = $NewPrimaryUser.DistinguishedName -replace 'CN=.*?,((CN|OU)=.*$)', '$1'
+            }#End try
+            catch{
+                Throw "Could not access domain and get information."
+            }#End Catch
+
+            try{
+                $NewSecondaryUser = Get-Aduser -filter{employeenumber -like $NewPrimaryUser.EmployeeNumber} -Properties employeenumber -server $NewSecondaryDomain -Credential $creds[$NewSecondaryDomain] -erroraction stop
+                $NewSecondaryUserParentOU = $NewSecondaryUser.DistinguishedName -replace 'CN=.*?,((CN|OU)=.*$)', '$1'
+            }#End try
+            catch{
+                Throw "Could not access domain and get information."
+            }#End catch
 
             $appendnum = "1"
             $UserUPNShort = $upn.split('@')[0]
@@ -117,6 +145,7 @@ MSOLService
 Todo list:
 [/] Verify Credentials and server
 [] Error handling
+[] Check for connection and creds
 #>
 
 
@@ -148,8 +177,19 @@ $UserInformation | Export-Csv c:\temp\UserInformation.csv -Encoding UTF8
 foreach($user in $UserInformation){
     $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
     $UserSecondaryNewDomain = $User.SecondaryUPN.split('@')[-1]
-    Move-AdObject -Identity $user.DistinguishedNameNewPrimary -TargetPath $User.OutOfSyncDistinguishedNameNewPrimary -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain]
-    Move-AdObject -Identity $user.DistinguishedNameNewSecondary -TargetPath $User.OutOfSyncDistinguishedNameNewSecondary -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain]
+    try{
+        Move-AdObject -Identity $user.DistinguishedNameNewPrimary -TargetPath $User.OutOfSyncDistinguishedNameNewPrimary -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction stop
+    }#End try
+    catch{
+        Throw "Could now move user out of sync in new primary domain."
+    }#End catch
+
+    try{
+        Move-AdObject -Identity $user.DistinguishedNameNewSecondary -TargetPath $User.OutOfSyncDistinguishedNameNewSecondary -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
+    }#End try
+    catch{
+        Throw "Could now move user out of sync in new secondary domain."
+    }#End catch
 }#End foreach
 
 <#
