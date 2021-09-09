@@ -1,6 +1,7 @@
 function Get-AzureADEnterpriseApplication{
     [CmdletBinding()]
     param(
+      [Parameter(Mandatory=$true)]
       [array]$BlacklistDomains
     )#End param
 
