@@ -128,12 +128,28 @@ function Set-CorrectImmuatbleIDAndUPN{
         [Object]$UserInformation # Must be output from Get-UserInformation!
     )#End param
     begin{
-        Connect-MsolService
+        try{
+            Connect-MsolService -ErrorAction Stop
+        }#End try
+        catch{
+            throw "Could not connect to msolservice."
+        }#End catch
     }#End Begin
     Process{
         foreach($User in $UserInformation){
-            Set-MsolUserPrincipalName -UserPrincipalName $user.AzureTempUPN -ImmutableID $User.NewImmutableID
-            Set-MsolUserPrincipalName -UserPrincipalName $user.AzureTempUPN -NewUserPrincipalName $User.NewPrimaryUPN
+            try{
+                Set-MsolUserPrincipalName -UserPrincipalName $user.AzureTempUPN -ImmutableID $User.NewImmutableID
+            }#End try
+            catch{
+                throw "Could not set new ImmutableID"
+            }#End catch
+
+            try{
+                Set-MsolUserPrincipalName -UserPrincipalName $user.AzureTempUPN -NewUserPrincipalName $User.NewPrimaryUPN
+            }#End try
+            catch{
+                throw "Could not set corret UPN."
+            }#End catch
         }#End foreach
     }#End process
     end{}#End end
@@ -151,11 +167,6 @@ Modules Required:
 ActiveDirectory
 AzureAD
 MSOLService
-
-Todo list:
-[/] Verify Credentials and server
-[] Error handling
-[] Check for connection and creds
 #>
 
 
@@ -220,9 +231,29 @@ foreach($user in $UserInformation){
 
     Set-CorrectImmuatbleIDAndUPN -UserInformation $user
 
-    $UserToMovePrimary = get-aduser -filter{userprincipalname -like $User.NewPrimaryUPN} -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain]
-    $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain]
+    try{
+        $UserToMovePrimary = get-aduser -filter{userprincipalname -like $User.NewPrimaryUPN} -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction Stop
+        try{
+            $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction Stop
+        }#End try
+        catch{
+            throw "Could not move user in primary domain."
+        }#End catch
+    }#End try
+    catch{
+        throw "Could not get user to move from primary domain."
+    }#End catch
 
-    $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $User.NewSecondaryUPN} -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain]
-    $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUPN -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain]
+    try{
+        $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $User.NewSecondaryUPN} -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
+        try{
+            $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUPN -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
+        }#End try
+        catch{
+            throw "Could not move user in secondary domain."
+        }#End catch
+    }#End try
+    catch{
+        throw "Could not get user to move from secondary domain."
+    }#End catch
 }#End foreach
