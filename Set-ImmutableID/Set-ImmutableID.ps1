@@ -117,7 +117,7 @@ MSOLService
 
 <#
 1a. Run the following to gather all information and save it. Optional is to save it to an csv.
-Output should look like below:
+Output should look like below. This Output show exemple of move from skolnet -> Uppsala:
 
 NewPrimaryUPN                          : daniel.a.anderssson@uppsala.se
 NewSecondaryUPN                        : daniel.a.andersson@skolnet.uppsala.se
@@ -155,9 +155,15 @@ foreach($user in $UserInformation){
 }#End foreach
 
 <#
-3. This code will change UPN from the temporary to the correct in the cloud to be able to set immutableid later.
+3. This code will change UPN from the temporary to the correct in the cloud to be able to set immutableid later. This piece will also move the user back to his/her OU.
 #>
 
 foreach($user in $UserInformation){
-    Set-TemporaryUPN -UserInformation $user 
+    Set-CorrectImmuatbleIDAndUPN -UserInformation $user
+
+    $UserToMovePrimary = get-aduser -filter{userprincipalname -like $User.NewPrimaryUPN}
+    $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU
+
+    $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $User.NewSecondaryUPN}
+    $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUPN
 }#End foreach
