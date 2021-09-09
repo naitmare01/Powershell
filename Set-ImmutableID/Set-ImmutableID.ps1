@@ -103,11 +103,21 @@ function Set-TemporaryUPN{
         [Object]$UserInformation # Must be output from Get-UserInformation!
     )#End param
     begin{
-        Connect-MsolService
+        try{
+            Connect-MsolService -ErrorAction Stop
+        }#End try
+        catch{
+            throw "Could not connect to msolservice."
+        }#End catch
     }#End Begin
     Process{
         foreach($User in $UserInformation){
-            Set-MsolUserPrincipalName -UserPrincipalName $User.NewSecondaryUPN -NewUserPrincipalName $user.AzureTempUPN
+            try{
+                Set-MsolUserPrincipalName -UserPrincipalName $User.NewSecondaryUPN -NewUserPrincipalName $user.AzureTempUPN -ErrorAction Stop
+            }#End try
+            catch{
+                throw "Could not set temporary UPN in AzureAD."
+            }#End Catch
         }#End foreach
     }#End process
     end{}#End end
