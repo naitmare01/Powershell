@@ -59,6 +59,7 @@ function Get-UserInformation{
             $UserInformation | Add-Member -Type NoteProperty -Name AzureTempUPN -Value $AzureTempUPN
             $UserInformation | Add-Member -Type NoteProperty -Name CurrentImmutableID -Value $AzureTempUPN.ImmutableID
             $UserInformation | Add-Member -Type NoteProperty -Name NewImmutableID -Value $NewImmutableID
+            $UserInformation | Add-Member -Type NoteProperty -Name OnPremiseCreds -Value $creds
             $returnArray.Add($UserInformation) | Out-Null
 
         }#End foreach
@@ -112,6 +113,10 @@ Modules Required:
 ActiveDirectory
 AzureAD
 MSOLService
+
+Todo list:
+[/] Verify Credentials and server
+[] Error handling
 #>
 
 
@@ -130,6 +135,7 @@ NewSecondaryUserParentOU               : OU=HomeOU,DC,skolnet,DC=uppsala,DC=se
 AzureTempUPN                           : daniel.a.andersson1@uppsalakommun1.onmicrosoft.com
 CurrentImmutableID                     : abcdefghnkGcBm4VC0I/gQ==
 NewImmutableID                         : tmnvYUdS9kGcBm4VC0I/gQ==
+OnPremiseCreds                         : CredentialsObject
 #>
 
 $UserInformation = Get-UserInformation -UserPrincipalNames daniel.a.andersson@uppsala.se
@@ -137,13 +143,13 @@ $UserInformation | Export-Csv c:\temp\UserInformation.csv -Encoding UTF8
 
 <#
 1b. Run the following code to move both users from 'DistinguishedNameNewPrimary' to 'OutOfSyncDistinguishedNameNewPrimary' and the same with NewSecondary.
-
- ########### OBS that credentials and server needs to be assessed here!!! 
 #>
 
 foreach($user in $UserInformation){
-    Move-AdObject -Identity $user.DistinguishedNameNewPrimary -TargetPath $User.OutOfSyncDistinguishedNameNewPrimary
-    Move-AdObject -Identity $user.DistinguishedNameNewSecondary -TargetPath $User.OutOfSyncDistinguishedNameNewSecondary
+    $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
+    $UserSecondaryNewDomain = $User.SecondaryUPN.split('@')[-1]
+    Move-AdObject -Identity $user.DistinguishedNameNewPrimary -TargetPath $User.OutOfSyncDistinguishedNameNewPrimary -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain]
+    Move-AdObject -Identity $user.DistinguishedNameNewSecondary -TargetPath $User.OutOfSyncDistinguishedNameNewSecondary -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain]
 }#End foreach
 
 <#
@@ -159,11 +165,14 @@ foreach($user in $UserInformation){
 #>
 
 foreach($user in $UserInformation){
+    $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
+    $UserSecondaryNewDomain = $User.SecondaryUPN.split('@')[-1]
+
     Set-CorrectImmuatbleIDAndUPN -UserInformation $user
 
-    $UserToMovePrimary = get-aduser -filter{userprincipalname -like $User.NewPrimaryUPN}
-    $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU
+    $UserToMovePrimary = get-aduser -filter{userprincipalname -like $User.NewPrimaryUPN} -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain]
+    $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain]
 
-    $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $User.NewSecondaryUPN}
-    $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUPN
+    $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $User.NewSecondaryUPN} -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain]
+    $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUPN -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain]
 }#End foreach
