@@ -16,11 +16,11 @@ function Get-UserInformation{
             $Uppsalacredential = Get-Credential -Message "Plese enter credential for uppsala in netbios\samaccountname"
         }#End if
         $creds = @{"uppsala.se" = $Uppsalacredential
-                   "skolnet.uppsala.se" = $skolnetcredential}
-        $OutOfSyncOUs = @{"uppsala.se" = "OU=Users,DC=uppsala,DC=se"
-                          "skolnet.uppsala.se" = "OU=Users,DC=skolnet,DC=uppsala,DC=se"}
-        $Domains = @{"uppsala.se" = "skolnet.uppsala.se"
-                     "skolnet.uppsala.se" = "uppsala.se"}
+                   "skola.uppsala.se" = $skolnetcredential}
+        $OutOfSyncOUs = @{"uppsala.se" = "CN=Users,DC=uppsala,DC=se"
+                          "skola.uppsala.se" = "CN=Users,DC=skolnet,DC=uppsala,DC=se"}
+        $Domains = @{"uppsala.se" = "skola.uppsala.se"
+                     "skola.uppsala.se" = "uppsala.se"}
         $AzureTenant = "uppsalakommun1.onmicrosoft.com"
         try{
             $AADSession = Get-AzureADCurrentSessionInfo -ErrorAction Stop
@@ -41,10 +41,23 @@ function Get-UserInformation{
     process{
         foreach($upn in $UserPrincipalNames){
             $NewPrimaryDomain = $upn.split('@')[-1]
+            if($NewPrimaryDomain -like "skola.uppsala.se"){
+                $ServerNewPrimaryDomain = "skolnet.uppsala.se"
+            }#End if
+            else{
+                $ServerNewPrimaryDomain = "uppsala.se"
+            }#End else
+
             $NewSecondaryDomain = $Domains[$NewPrimaryDomain]
+            if($NewSecondaryDomain -like "skola.uppsala.se"){
+                $ServerNewSecondaryDomain = "skolnet.uppsala.se"
+            }#End if
+            else{
+                $ServerNewSecondaryDomain = "uppsala.se"
+            }#End else
 
             try{
-                $NewPrimaryUser = Get-Aduser -filter{UserPrincipalName -like $upn} -Properties employeenumber -server $NewPrimaryDomain -Credential $creds[$NewPrimaryDomain] -erroraction stop
+                $NewPrimaryUser = Get-Aduser -filter{UserPrincipalName -like $upn} -Properties employeenumber -server $ServerNewPrimaryDomain -Credential $creds[$NewPrimaryDomain] -erroraction stop
                 $NewPrimaryUserParentOU = $NewPrimaryUser.DistinguishedName -replace 'CN=.*?,((CN|OU)=.*$)', '$1'
             }#End try
             catch{
@@ -52,7 +65,7 @@ function Get-UserInformation{
             }#End Catch
 
             try{
-                $NewSecondaryUser = Get-Aduser -filter{employeenumber -like $NewPrimaryUser.EmployeeNumber} -Properties employeenumber -server $NewSecondaryDomain -Credential $creds[$NewSecondaryDomain] -erroraction stop
+                $NewSecondaryUser = Get-Aduser -filter{employeenumber -like $NewPrimaryUser.EmployeeNumber} -Properties employeenumber -server $ServerNewSecondaryDomain -Credential $creds[$NewSecondaryDomain] -erroraction stop
                 $NewSecondaryUserParentOU = $NewSecondaryUser.DistinguishedName -replace 'CN=.*?,((CN|OU)=.*$)', '$1'
             }#End try
             catch{
@@ -72,6 +85,8 @@ function Get-UserInformation{
                 }#End catch
             }#End While
 
+            $CurrentImmutableID = Get-AzureADUser -objectid $NewPrimaryUser.userprincipalname ## ErrorHandling??
+
             [guid]$SGSADMSDSConsistencyguid = ($NewPrimaryUser.objectguid).ToString()
             $NewImmutableID = [System.Convert]::ToBase64String($SGSADMSDSConsistencyguid.ToByteArray())
 
@@ -85,7 +100,7 @@ function Get-UserInformation{
             $UserInformation | Add-Member -Type NoteProperty -Name NewPrimaryUserParentOU -Value $NewPrimaryUserParentOU
             $UserInformation | Add-Member -Type NoteProperty -Name NewSecondaryUserParentOU -Value $NewSecondaryUserParentOU
             $UserInformation | Add-Member -Type NoteProperty -Name AzureTempUPN -Value $AzureTempUPN
-            $UserInformation | Add-Member -Type NoteProperty -Name CurrentImmutableID -Value $AzureTempUPN.ImmutableID
+            $UserInformation | Add-Member -Type NoteProperty -Name CurrentImmutableID -Value $CurrentImmutableID.Immutableid
             $UserInformation | Add-Member -Type NoteProperty -Name NewImmutableID -Value $NewImmutableID
             $UserInformation | Add-Member -Type NoteProperty -Name OnPremiseCreds -Value $creds
             $returnArray.Add($UserInformation) | Out-Null
@@ -113,7 +128,7 @@ function Set-TemporaryUPN{
     Process{
         foreach($User in $UserInformation){
             try{
-                Set-MsolUserPrincipalName -UserPrincipalName $User.NewSecondaryUPN -NewUserPrincipalName $user.AzureTempUPN -ErrorAction Stop
+                Set-MsolUserPrincipalName -UserPrincipalName $User.NewPrimaryUPN -NewUserPrincipalName $user.AzureTempUPN -ErrorAction Stop
             }#End try
             catch{
                 throw "Could not set temporary UPN in AzureAD."
@@ -138,7 +153,8 @@ function Set-CorrectImmuatbleIDAndUPN{
     Process{
         foreach($User in $UserInformation){
             try{
-                Set-MsolUserPrincipalName -UserPrincipalName $user.AzureTempUPN -ImmutableID $User.NewImmutableID
+                #Set-MsolUserPrincipalName -UserPrincipalName $user.AzureTempUPN -ImmutableID $User.NewImmutableID
+                Set-MsolUser -UserPrincipalName $user.AzureTempUPN -ImmutableId $user.NewImmutableID
             }#End try
             catch{
                 throw "Could not set new ImmutableID"
@@ -188,7 +204,7 @@ NewImmutableID                         : tmnvYUdS9kGcBm4VC0I/gQ==
 OnPremiseCreds                         : CredentialsObject
 #>
 
-$UserInformation = Get-UserInformation -UserPrincipalNames daniel.a.andersson@uppsala.se
+$UserInformation = Get-UserInformation -UserPrincipalNames anders.daun@skola.uppsala.se
 $UserInformation | Export-Csv c:\temp\UserInformation.csv -Encoding UTF8
 
 <#
@@ -197,16 +213,30 @@ $UserInformation | Export-Csv c:\temp\UserInformation.csv -Encoding UTF8
 
 foreach($user in $UserInformation){
     $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
-    $UserSecondaryNewDomain = $User.SecondaryUPN.split('@')[-1]
+    if($UserPrimaryNewDomain -like "skola.uppsala.se"){
+        $ServerUserPrimaryNewDomain = "skolnet.uppsala.se"
+    }#End if
+    else{
+        $ServerUserPrimaryNewDomain = "uppsala.se"
+    }#End else
+
+    $UserSecondaryNewDomain = $User.NewSecondaryUPN.split('@')[-1]
+    if($UserSecondaryNewDomain -like "skola.uppsala.se"){
+        $ServerUserSecondaryNewDomain = "skolnet.uppsala.se"
+    }#End if
+    else{
+        $ServerUserSecondaryNewDomain = "uppsala.se"
+    }#End else
+
     try{
-        Move-AdObject -Identity $user.DistinguishedNameNewPrimary -TargetPath $User.OutOfSyncDistinguishedNameNewPrimary -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction stop
+        Move-AdObject -Identity $user.DistinguishedNameNewPrimary -TargetPath $User.OutOfSyncDistinguishedNameNewPrimary -server $ServerUserPrimaryNewDomain -Credential $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction stop
     }#End try
     catch{
         Throw "Could now move user out of sync in new primary domain."
     }#End catch
 
     try{
-        Move-AdObject -Identity $user.DistinguishedNameNewSecondary -TargetPath $User.OutOfSyncDistinguishedNameNewSecondary -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
+        Move-AdObject -Identity $user.DistinguishedNameNewSecondary -TargetPath $User.OutOfSyncDistinguishedNameNewSecondary -server $ServerUserSecondaryNewDomain -Credential $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
     }#End try
     catch{
         Throw "Could now move user out of sync in new secondary domain."
@@ -227,14 +257,28 @@ foreach($user in $UserInformation){
 
 foreach($user in $UserInformation){
     $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
-    $UserSecondaryNewDomain = $User.SecondaryUPN.split('@')[-1]
+    if($UserPrimaryNewDomain -like "skola.uppsala.se"){
+        $ServerUserPrimaryNewDomain = "skolnet.uppsala.se"
+    }#End if
+    else{
+        $ServerUserPrimaryNewDomain = "uppsala.se"
+    }#End else
+
+    $UserSecondaryNewDomain = $User.NewSecondaryUPN.split('@')[-1]
+    if($UserSecondaryNewDomain -like "skola.uppsala.se"){
+        $ServerUserSecondaryNewDomain = "skolnet.uppsala.se"
+    }#End if
+    else{
+        $ServerUserSecondaryNewDomain = "uppsala.se"
+    }#End else
 
     Set-CorrectImmuatbleIDAndUPN -UserInformation $user
 
     try{
-        $UserToMovePrimary = get-aduser -filter{userprincipalname -like $User.NewPrimaryUPN} -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction Stop
+        $upnfilter = $User.NewPrimaryUPN
+        $UserToMovePrimary = get-aduser -filter{userprincipalname -like $upnfilter} -server $ServerUserPrimaryNewDomain -Credential $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction Stop
         try{
-            $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU -server $UserPrimaryNewDomain -Credentials $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction Stop
+            $UserToMovePrimary | Move-ADObject -TargetPath $User.NewPrimaryUserParentOU -server $ServerUserPrimaryNewDomain -Credential $user.OnPremiseCreds[$UserPrimaryNewDomain] -ErrorAction Stop
         }#End try
         catch{
             throw "Could not move user in primary domain."
@@ -245,9 +289,10 @@ foreach($user in $UserInformation){
     }#End catch
 
     try{
-        $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $User.NewSecondaryUPN} -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
+        $upnfilterSecondary = $User.NewSecondaryUPN
+        $UserToMoveSecondary = get-aduser -filter{userprincipalname -like $upnfilterSecondary} -server $ServerUserSecondaryNewDomain -Credential $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
         try{
-            $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUPN -server $UserSecondaryNewDomain -Credentials $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
+            $UserToMoveSecondary | Move-ADObject -TargetPath $User.NewSecondaryUserParentOU -server $ServerUserSecondaryNewDomain -Credential $user.OnPremiseCreds[$UserSecondaryNewDomain] -ErrorAction Stop
         }#End try
         catch{
             throw "Could not move user in secondary domain."
@@ -257,3 +302,4 @@ foreach($user in $UserInformation){
         throw "Could not get user to move from secondary domain."
     }#End catch
 }#End foreach
+
