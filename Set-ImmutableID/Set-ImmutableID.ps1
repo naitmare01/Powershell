@@ -2,26 +2,26 @@ function Get-UserInformation{
     [cmdletbinding()]
     param(
         [Parameter(mandatory=$true)] 
-        $UserPrincipalNames #UPNs from the new and coming primary domian. E.g. if user is located in skolnet and will be switched to uppsala, the UPN from Uppsala should be provided.
+        $UserPrincipalNames #UPNs from the new and coming primary domian. E.g. if user is located in edunet and will be switched to domain, the UPN from domain should be provided.
     )#End param
 
     begin{
         $returnArray = [System.Collections.ArrayList]@()
 
         #Static Variables to connect to domain and azuread.
-        if($null -eq $skolnetcredential){
-            $skolnetcredential = Get-Credential -Message "Plese enter credential for skolnet in netbios\samaccountname"
+        if($null -eq $edunetcredential){
+            $edunetcredential = Get-Credential -Message "Plese enter credential for edunet in netbios\samaccountname"
         }#End if
-        if($null -eq $Uppsalacredential){
-            $Uppsalacredential = Get-Credential -Message "Plese enter credential for uppsala in netbios\samaccountname"
+        if($null -eq $domaincredential){
+            $domaincredential = Get-Credential -Message "Plese enter credential for domain in netbios\samaccountname"
         }#End if
-        $creds = @{"uppsala.se" = $Uppsalacredential
-                   "skola.uppsala.se" = $skolnetcredential}
-        $OutOfSyncOUs = @{"uppsala.se" = "CN=Users,DC=uppsala,DC=se"
-                          "skola.uppsala.se" = "CN=Users,DC=skolnet,DC=uppsala,DC=se"}
-        $Domains = @{"uppsala.se" = "skola.uppsala.se"
-                     "skola.uppsala.se" = "uppsala.se"}
-        $AzureTenant = "uppsalakommun1.onmicrosoft.com"
+        $creds = @{"domain.com" = $domaincredential
+                   "subdomain.domain.com" = $edunetcredential}
+        $OutOfSyncOUs = @{"domain.com" = "CN=Users,DC=domain,DC=se"
+                          "edu.domain.com" = "CN=Users,DC=edunet,DC=domain,DC=se"}
+        $Domains = @{"domain.com" = "edu.domain.com"
+                     "edu.domain.com" = "domain.com"}
+        $AzureTenant = "domainmunicipality1.onmicrosoft.com"
         try{
             $AADSession = Get-AzureADCurrentSessionInfo -ErrorAction Stop
             if($AADSession.TenantDomain -notlike $AzureTenant){
@@ -41,19 +41,19 @@ function Get-UserInformation{
     process{
         foreach($upn in $UserPrincipalNames){
             $NewPrimaryDomain = $upn.split('@')[-1]
-            if($NewPrimaryDomain -like "skola.uppsala.se"){
-                $ServerNewPrimaryDomain = "skolnet.uppsala.se"
+            if($NewPrimaryDomain -like "edu.domain.com"){
+                $ServerNewPrimaryDomain = "edunet.domain.com"
             }#End if
             else{
-                $ServerNewPrimaryDomain = "uppsala.se"
+                $ServerNewPrimaryDomain = "domain.com"
             }#End else
 
             $NewSecondaryDomain = $Domains[$NewPrimaryDomain]
-            if($NewSecondaryDomain -like "skola.uppsala.se"){
-                $ServerNewSecondaryDomain = "skolnet.uppsala.se"
+            if($NewSecondaryDomain -like "edu.domain.com"){
+                $ServerNewSecondaryDomain = "edunet.domain.com"
             }#End if
             else{
-                $ServerNewSecondaryDomain = "uppsala.se"
+                $ServerNewSecondaryDomain = "domain.com"
             }#End else
 
             try{
@@ -182,29 +182,29 @@ Be carefull to only run the steps and function one by one. This is not intended 
 Modules Required:
 ActiveDirectory
 AzureAD
-MSOLService
+MSOnline
 #>
 
 
 <#
 1a. Run the following to gather all information and save it. Optional is to save it to an csv.
-Output should look like below. This Output show exemple of move from skolnet -> Uppsala:
+Output should look like below. This Output show exemple of move from edunet -> domain:
 
-NewPrimaryUPN                          : daniel.a.anderssson@uppsala.se
-NewSecondaryUPN                        : daniel.a.andersson@skolnet.uppsala.se
-DistinguishedNameNewPrimary            : CN=User1DN,OU=HomeOU,DC=uppsala,DC=se
-DistinguishedNameNewSecondary          : CN=User1DN,OU=HomeOU,DC,skolnet,DC=uppsala,DC=se
-OutOfSyncDistinguishedNameNewPrimary   : CN=Users,DC=uppsala,DC=se
-OutOfSyncDistinguishedNameNewSecondary : CN=Users,DC=skolnet,DC=uppsala,DC=se
-NewPrimaryUserParentOU                 : OU=HomeOU,DC=uppsala,DC=se
-NewSecondaryUserParentOU               : OU=HomeOU,DC,skolnet,DC=uppsala,DC=se
-AzureTempUPN                           : daniel.a.andersson1@uppsalakommun1.onmicrosoft.com
+NewPrimaryUPN                          : daniel.a.anderssson@domain.com
+NewSecondaryUPN                        : daniel.a.andersson@edunet.domain.com
+DistinguishedNameNewPrimary            : CN=User1DN,OU=HomeOU,DC=domain,DC=se
+DistinguishedNameNewSecondary          : CN=User1DN,OU=HomeOU,DC,edunet,DC=domain,DC=se
+OutOfSyncDistinguishedNameNewPrimary   : CN=Users,DC=domain,DC=se
+OutOfSyncDistinguishedNameNewSecondary : CN=Users,DC=edunet,DC=domain,DC=se
+NewPrimaryUserParentOU                 : OU=HomeOU,DC=domain,DC=se
+NewSecondaryUserParentOU               : OU=HomeOU,DC,edunet,DC=domain,DC=se
+AzureTempUPN                           : daniel.a.andersson1@domainmunicipality1.onmicrosoft.com
 CurrentImmutableID                     : abcdefghnkGcBm4VC0I/gQ==
 NewImmutableID                         : tmnvYUdS9kGcBm4VC0I/gQ==
 OnPremiseCreds                         : CredentialsObject
 #>
 
-$UserInformation = Get-UserInformation -UserPrincipalNames anders.daun@skola.uppsala.se
+$UserInformation = Get-UserInformation -UserPrincipalNames anders.daun@edu.domain.com
 $UserInformation | Export-Csv c:\temp\UserInformation.csv -Encoding UTF8
 
 <#
@@ -213,19 +213,19 @@ $UserInformation | Export-Csv c:\temp\UserInformation.csv -Encoding UTF8
 
 foreach($user in $UserInformation){
     $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
-    if($UserPrimaryNewDomain -like "skola.uppsala.se"){
-        $ServerUserPrimaryNewDomain = "skolnet.uppsala.se"
+    if($UserPrimaryNewDomain -like "edu.domain.com"){
+        $ServerUserPrimaryNewDomain = "edunet.domain.com"
     }#End if
     else{
-        $ServerUserPrimaryNewDomain = "uppsala.se"
+        $ServerUserPrimaryNewDomain = "domain.com"
     }#End else
 
     $UserSecondaryNewDomain = $User.NewSecondaryUPN.split('@')[-1]
-    if($UserSecondaryNewDomain -like "skola.uppsala.se"){
-        $ServerUserSecondaryNewDomain = "skolnet.uppsala.se"
+    if($UserSecondaryNewDomain -like "edu.domain.com"){
+        $ServerUserSecondaryNewDomain = "edunet.domain.com"
     }#End if
     else{
-        $ServerUserSecondaryNewDomain = "uppsala.se"
+        $ServerUserSecondaryNewDomain = "domain.com"
     }#End else
 
     try{
@@ -257,19 +257,19 @@ foreach($user in $UserInformation){
 
 foreach($user in $UserInformation){
     $UserPrimaryNewDomain = $User.NewPrimaryUPN.split('@')[-1]
-    if($UserPrimaryNewDomain -like "skola.uppsala.se"){
-        $ServerUserPrimaryNewDomain = "skolnet.uppsala.se"
+    if($UserPrimaryNewDomain -like "edu.domain.com"){
+        $ServerUserPrimaryNewDomain = "edunet.domain.com"
     }#End if
     else{
-        $ServerUserPrimaryNewDomain = "uppsala.se"
+        $ServerUserPrimaryNewDomain = "domain.com"
     }#End else
 
     $UserSecondaryNewDomain = $User.NewSecondaryUPN.split('@')[-1]
-    if($UserSecondaryNewDomain -like "skola.uppsala.se"){
-        $ServerUserSecondaryNewDomain = "skolnet.uppsala.se"
+    if($UserSecondaryNewDomain -like "edu.domain.com"){
+        $ServerUserSecondaryNewDomain = "edunet.domain.com"
     }#End if
     else{
-        $ServerUserSecondaryNewDomain = "uppsala.se"
+        $ServerUserSecondaryNewDomain = "domain.com"
     }#End else
 
     Set-CorrectImmuatbleIDAndUPN -UserInformation $user
